@@ -12,7 +12,7 @@ Objetivos de la versión 1:
 
 - Registrar una venta o un gasto en menos de un minuto, también desde el celular en una feria.
 
-- Conocer el costo real y el margen de cada modelo, incluidas las horas de tejido a mano.
+- Conocer el costo real y el margen de cada variante, incluidas las horas de trabajo a mano.
 
 - Recibir avisos de insumos por agotarse, pedidos por entregar y abonos pendientes.
 
@@ -95,9 +95,9 @@ Seis módulos comparten una sola base de datos; ventas e inventario se alimentan
 
 - Vender un producto de vitrina descuenta su stock al guardar la venta. Un encargo no pasa por la vitrina: se fabrica para ese cliente.
 
-- Toda fabricación es una orden de producción, para vitrina o para un encargo. Al crearla muestra el detalle de insumos que va a usar según la receta; al iniciarla pasa esos insumos a «En producción», donde dejan de estar disponibles pero siguen contando en la existencia total; al terminarla le pregunta cuánto usó realmente de cada insumo, con lo de la receta ya prellenado. Por cada insumo con sobrante, ella marca si aún sirve (vuelve a disponible) o no sirve (sale como merma). Lo usado se consume definitivamente y, si es de vitrina, suma las unidades a la variante. Si una orden se cancela, lo que no se usó vuelve a disponible. Se puede iniciar aunque falte algún insumo: el faltante queda en negativo, marcado en rojo, hasta registrar la compra.
+- Toda fabricación es una orden de producción, para vitrina o para un encargo. Al crearla muestra el detalle de insumos que va a usar según la receta de la variante (las piezas únicas no tienen receta: los insumos se agregan a mano); al iniciarla pasa esos insumos a «En producción», donde dejan de estar disponibles pero siguen contando en la existencia total; al terminarla le pregunta cuánto usó realmente de cada insumo, con lo de la receta ya prellenado. Por cada insumo con sobrante, ella marca si aún sirve (vuelve a disponible) o no sirve (sale como merma). Lo usado se consume definitivamente y, si es de vitrina, suma las unidades a la variante. Si una orden se cancela, lo que no se usó vuelve a disponible. Se puede iniciar aunque falte algún insumo: el faltante queda en negativo, marcado en rojo, hasta registrar la compra.
 
-- Costo de un modelo = Σ (cantidad de insumo × precio vigente) + horas de tejido × valor hora editable (10.000 COP por defecto).
+- Costo de una variante = Σ (cantidad de insumo de su receta × precio vigente) + horas de tejido del modelo × valor hora editable (10.000 COP por defecto). Las horas cuentan todo el trabajo: tejer, armar, forrar y poner herrajes.
 
 - Un encargo se cobra con 50 % de anticipo y 50 % al terminarlo, antes de entregar: el pedido no pasa a «Enviado» ni «Entregado» con saldo pendiente. Saldo = total − Σ pagos. La cartera de un cliente es la suma de los saldos de sus encargos; no se fía ni se vende a cuotas.
 
@@ -134,14 +134,14 @@ El celular y el navegador de la Mac llegan al mismo contenedor por el puerto 808
 
 ## Modelo de datos
 
-El modelo separa el **modelo** de bolso (p. ej. «Bolso balde con argollas») de sus **variantes** de color, porque el stock y las ventas se cuentan por variante y la receta de insumos por modelo.
+El modelo separa el **modelo** de bolso (p. ej. «Bolso balde con argollas») de sus **variantes** de color, porque el stock, las ventas y la receta de insumos se cuentan por variante: los hilos son insumos de un color y hay modelos que combinan varios colores.
 
 | Entidad | Campos clave | Relaciones |
 |---|---|---|
-| Modelo | nombre, categoría (crochet, murano, cristal, otro), precio de venta, horas de tejido, foto, activo | 1–N Variante, 1–N RecetaItem |
-| Variante | color, SKU, stock, stock mínimo, foto propia | N–1 Modelo |
+| Modelo | nombre, categoría (crochet, murano, cristal, otro), precio de venta, horas de tejido, foto, activo | 1–N Variante |
+| Variante | color o combinación de colores, SKU, stock, stock mínimo, foto propia, pieza única (sí/no) | N–1 Modelo, 1–N RecetaItem (ninguno si es pieza única) |
 | Insumo | nombre, tipo (hilo, cuentas, herraje, forro, argolla, empaque), unidad editable que ella define (metros, gramos, unidades, paquetes…), con conversión opcional de compra (p. ej. 1 cono = 400 m), precio vigente (con historial en PrecioInsumo), stock, stock mínimo, proveedor | 1–N RecetaItem |
-| RecetaItem | cantidad de insumo por unidad del modelo | Modelo × Insumo |
+| RecetaItem | cantidad de insumo por unidad de la variante, en la unidad que ella definió para el insumo | Variante × Insumo |
 | MovimientoInventario | fecha, tipo (compra, inicio de producción, consumo al terminar, liberación por cancelación, ingreso a vitrina, venta, devolución, cambio, ajuste, merma), cantidad, costo unitario, referencia | Variante o Insumo |
 | Compra | fecha, proveedor, total, cuenta de pago | 1–N ítems de insumo; genera Transacción |
 | Cliente | obligatorios: nombre, WhatsApp, dirección y ciudad de envío; opcionales: Instagram/TikTok, correo, cédula, notas. Las ventas de feria pueden ir a «Cliente de mostrador» | 1–N Pedido |
@@ -378,7 +378,7 @@ Las preguntas A a F son para tu prima y la G es para ti; la columna Respuesta se
 |---|---|---|---|
 | D1 | ¿Qué insumos usa y en qué unidad los compra (conos por gramos, cuentas por paquete, herrajes por unidad)? | Unidades de medida y conversión | Se configura en el programa |
 | D2 | ¿Quiénes son sus proveedores habituales? ¿Compra en línea o en tiendas locales? | Registro de compras y proveedores | Se configura en el programa |
-| D3 | ¿Puede estimar cuánto insumo y cuántas horas lleva cada modelo? | Recetas y costo por modelo | Quiere receta por modelo; faltan las cantidades |
+| D3 | ¿Puede estimar cuánto insumo y cuántas horas lleva cada modelo? | Recetas y costo por variante | Receta por variante (hay modelos que combinan colores), con cualquier insumo que ella haya creado; las horas cuentan todo el trabajo; las piezas únicas van sin receta y se registra lo usado. Mientras tanto se trabaja con datos de ejemplo |
 | D4 | ¿Le interesa controlar sobrantes y retazos, o le basta un stock aproximado? | Nivel de detalle del inventario | Al terminar cada orden registra lo usado y marca, por insumo, si el sobrante sirve o no |
 | D5 | ¿Cada cuánto cuenta físicamente lo que tiene? | Pantalla de conteo y ajustes | Se maneja con el conteo y los ajustes del programa |
 
@@ -430,7 +430,7 @@ El mayor riesgo no es técnico sino de uso: si registrar una venta toma más de 
 
 - **Fase 1 · base:** inventario de variantes e insumos, venta rápida con comprobante en PDF, clientes con contactos e historial, cuentas y gastos, respaldos, instalador y acceso por celular.
 
-- **Fase 2 · control:** pedidos por encargo con abonos y estados, cartera por cliente, recetas y costo por modelo, registro de producción, avisos.
+- **Fase 2 · control:** pedidos por encargo con abonos y estados, cartera por cliente, recetas y costo por variante, registro de producción, avisos.
 
 - **Fase 3 · decisiones:** tablero de estadísticas, ferias y eventos, exportes a Excel.
 
