@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / Vite
+node_modules/
+dist/
+*.local
+
+# Datos locales: nunca se suben (contienen datos de clientes)
+data/
+respaldos/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Editores y SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*.docx
