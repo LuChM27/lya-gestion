@@ -365,7 +365,7 @@ Las preguntas A a F son para tu prima y la G es para ti; la columna Respuesta se
 | # | Pregunta | Por qué importa | Respuesta |
 |---|---|---|---|
 | C1 | ¿Qué medios de pago recibe (efectivo, Nequi, Daviplata, transferencia, datáfono o link de pago) y cuáles cobran comisión? | Cuentas y descuento de comisiones | Efectivo, Nequi/Daviplata y transferencia; sin datáfono |
-| C2 | ¿Separa el dinero del negocio del personal? | Categoría de retiros y utilidad real |  |
+| C2 | ¿Separa el dinero del negocio del personal? | Categoría de retiros y utilidad real | Sí, separa el dinero del negocio del personal |
 | C3 | ¿Tiene RUT o está formalizada? ¿En qué régimen? ¿Tiene contador o debe facturar electrónicamente? | Define si basta flujo de caja o hace falta más | Informal, sin RUT |
 | C4 | ¿Cómo lleva hoy las cuentas: cuaderno, Excel o alguna app? ¿Hay historial para pasar al sistema? | Migración de datos | Cuaderno; se empieza con saldos iniciales |
 | C5 | ¿Qué gastos fijos tiene: internet, publicidad pagada, arriendo, servicios? | Categorías y gastos recurrentes | Editables en el programa |
@@ -397,7 +397,7 @@ Las preguntas A a F son para tu prima y la G es para ti; la columna Respuesta se
 |---|---|---|---|
 | F1 | ¿Lo usaría más desde el celular o desde la Mac? | Qué pantallas se diseñan primero | Ambos por igual |
 | F2 | ¿Quiere enviar comprobantes de venta por WhatsApp o imprimir recibos? | Generación de comprobantes | PDF imprimible |
-| F3 | ¿Tiene el logo en alta resolución o en un archivo editable (Canva, PNG o SVG)? | Ícono de la app e identidad visual |  |
+| F3 | ¿Tiene el logo en alta resolución o en un archivo editable (Canva, PNG o SVG)? | Ícono de la app e identidad visual | Sí: `assets/logo/` (900 px sin contacto; 1600 px con Instagram y WhatsApp) |
 | F4 | ¿Prefiere tema claro, oscuro o ambos? | Paleta de colores | Ambos |
 | F5 | ¿Qué palabras usa ella para los estados de un pedido y para sus categorías de gasto? | La app debe hablar como ella | Apartado, en proceso, listo, enviado |
 

@@ -10,6 +10,7 @@ Es una aplicación web local que corre en la MacBook Air de la dueña dentro de 
 
 - [Arquitectura del sistema](docs/arquitectura.md) — objetivos, módulos, reglas de negocio, modelo de datos, despliegue, seguridad y decisiones ([original .docx](docs/arquitectura.docx)).
 - [Mockups](docs/mockups/) — seis pantallas de referencia (Mac y celular).
+- [Logo](assets/logo/) — `logo-900.webp` (sin contacto, para la app e ícono) y `logo-contacto-1600.jpg` (con Instagram y WhatsApp, para el comprobante PDF).
 - [Archivo de despliegue](deploy/docker-compose.yml) — el `docker-compose.yml` que se instala en `~/LyA`.
 
 ## Stack
