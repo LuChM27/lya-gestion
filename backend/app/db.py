@@ -2,10 +2,11 @@
 
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Annotated
 
 from alembic import command
 from alembic.config import Config as ConfigAlembic
-from fastapi import Request
+from fastapi import Depends, Request
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session
 
@@ -41,3 +42,6 @@ def migrar(config: Config) -> None:
 def obtener_sesion(request: Request) -> Iterator[Session]:
     with Session(request.app.state.motor) as sesion:
         yield sesion
+
+
+SesionDB = Annotated[Session, Depends(obtener_sesion)]

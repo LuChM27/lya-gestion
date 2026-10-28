@@ -15,7 +15,5 @@ def test_lee_variables(tmp_path):
 
 
 def test_crea_carpetas(tmp_path):
-    c = Config.desde_entorno(
-        {"DATA_DIR": str(tmp_path / "d"), "BACKUP_DIR": str(tmp_path / "r")}
-    )
+    c = Config.desde_entorno({"DATA_DIR": str(tmp_path / "d"), "BACKUP_DIR": str(tmp_path / "r")})
     assert c.data_dir.is_dir() and c.backup_dir.is_dir()

@@ -8,9 +8,7 @@ url = context.config.attributes.get("url") or context.config.get_main_option("sq
 motor = create_engine(url)
 with motor.connect() as conexion:
     # render_as_batch permite ALTER TABLE en SQLite en migraciones futuras.
-    context.configure(
-        connection=conexion, target_metadata=Base.metadata, render_as_batch=True
-    )
+    context.configure(connection=conexion, target_metadata=Base.metadata, render_as_batch=True)
     with context.begin_transaction():
         context.run_migrations()
 motor.dispose()
