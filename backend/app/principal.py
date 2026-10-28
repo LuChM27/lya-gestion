@@ -8,6 +8,7 @@ from app.auth.limitador import Limitador
 from app.config import Config
 from app.db import crear_motor
 from app.version import VERSION
+from app.web import registrar_web
 
 
 def crear_app(config: Config) -> FastAPI:
@@ -22,4 +23,5 @@ def crear_app(config: Config) -> FastAPI:
     app.state.limitador = Limitador()
     app.include_router(salud.router)
     app.include_router(rutas_auth.router)
+    registrar_web(app, config.web_dir)  # al final: su ruta comodín no debe tapar /api
     return app
