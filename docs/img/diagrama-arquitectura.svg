@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1100" viewBox="0 0 1320 1100" font-family="Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c9c7bf"/>
+    </marker>
+  </defs>
+  <rect width="1320" height="1100" fill="#ffffff"/>
+
+  <text x="40" y="55" font-size="26" font-weight="700" fill="#1f1f1f">Todo corre en la Mac como un servicio de macOS; el celular entra por el Wi-Fi</text>
+  <text x="40" y="92" font-size="19" fill="#5f5f5a">Componentes de L&amp;A Gestión y quién llama a quién</text>
+
+  <!-- Mac -->
+  <rect x="410" y="150" width="890" height="790" rx="14" fill="none" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="438" y="190" font-size="22" font-weight="600" fill="#1f1f1f">MacBook Air 2017 · macOS Monterey 12.7.6 · Intel</text>
+
+  <!-- launchd -->
+  <rect x="438" y="215" width="552" height="500" rx="12" fill="#ececea" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="466" y="255" font-size="20" font-weight="600" fill="#1f1f1f">launchd · servicio co.lyatejidos.gestion</text>
+
+  <!-- Proceso -->
+  <rect x="466" y="282" width="496" height="415" rx="12" fill="#d6e1ec" stroke="#2f7bd8" stroke-width="3"/>
+  <text x="494" y="320" font-size="20" font-weight="600" fill="#1f1f1f">Proceso Python 3.13 · :8080</text>
+
+  <rect x="494" y="345" width="440" height="96" rx="10" fill="#dfe8f0" stroke="#c9d3dc" stroke-width="2"/>
+  <text x="522" y="383" font-size="22" font-weight="600" fill="#1f1f1f">Interfaz web</text>
+  <text x="522" y="415" font-size="19" fill="#5f5f5a">React + Vite, compilada para Safari 17.6</text>
+
+  <rect x="494" y="473" width="440" height="96" rx="10" fill="#dfe8f0" stroke="#c9d3dc" stroke-width="2"/>
+  <text x="522" y="511" font-size="22" font-weight="600" fill="#1f1f1f">API y lógica de negocio</text>
+  <text x="522" y="543" font-size="19" fill="#5f5f5a">FastAPI · SQLAlchemy · ReportLab</text>
+
+  <rect x="494" y="601" width="440" height="80" rx="10" fill="#dfe8f0" stroke="#c9d3dc" stroke-width="2"/>
+  <text x="522" y="633" font-size="22" font-weight="600" fill="#1f1f1f">Tareas programadas</text>
+  <text x="522" y="663" font-size="19" fill="#5f5f5a">avisos diarios y respaldos</text>
+
+  <line x1="714" y1="441" x2="714" y2="471" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+
+  <!-- Carpetas -->
+  <rect x="466" y="750" width="236" height="100" rx="10" fill="#ececea" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="490" y="790" font-size="22" font-weight="600" fill="#1f1f1f">~/LyA/versiones</text>
+  <text x="490" y="822" font-size="19" fill="#5f5f5a">python, app y web</text>
+
+  <rect x="726" y="750" width="236" height="100" rx="10" fill="#ececea" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="750" y="790" font-size="22" font-weight="600" fill="#1f1f1f">~/LyA/datos</text>
+  <text x="750" y="822" font-size="19" fill="#5f5f5a">lya.db y fotos/</text>
+
+  <line x1="844" y1="715" x2="844" y2="748" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+
+  <!-- Columna derecha -->
+  <rect x="1018" y="240" width="255" height="150" rx="12" fill="#ffffff" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="1040" y="280" font-size="22" font-weight="600" fill="#1f1f1f">L&amp;A Gestión.app</text>
+  <text x="1040" y="312" font-size="19" fill="#5f5f5a">ícono del Dock</text>
+  <text x="1040" y="340" font-size="19" fill="#5f5f5a">enciende si hace falta</text>
+  <text x="1040" y="368" font-size="19" fill="#5f5f5a">abre el navegador</text>
+
+  <rect x="1018" y="420" width="255" height="150" rx="12" fill="#ffffff" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="1040" y="460" font-size="22" font-weight="600" fill="#1f1f1f">Barra de menú</text>
+  <text x="1040" y="492" font-size="19" fill="#5f5f5a">estado del servicio</text>
+  <text x="1040" y="520" font-size="19" fill="#5f5f5a">encender · apagar</text>
+  <text x="1040" y="548" font-size="19" fill="#5f5f5a">actualizar</text>
+
+  <rect x="1018" y="730" width="255" height="150" rx="12" fill="#ffffff" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="1040" y="770" font-size="22" font-weight="600" fill="#1f1f1f">Respaldos</text>
+  <text x="1040" y="802" font-size="19" fill="#5f5f5a">~/LyA-Respaldos</text>
+  <text x="1040" y="830" font-size="19" fill="#5f5f5a">copia diaria</text>
+  <text x="1040" y="858" font-size="19" fill="#5f5f5a">→ Google Drive</text>
+
+  <line x1="1016" y1="315" x2="964" y2="315" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+  <line x1="1016" y1="495" x2="992" y2="495" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+  <line x1="962" y1="800" x2="1016" y2="800" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+
+  <!-- Clientes -->
+  <rect x="42" y="347" width="312" height="128" rx="12" fill="#ffffff" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="70" y="388" font-size="22" font-weight="600" fill="#1f1f1f">Celular</text>
+  <text x="70" y="418" font-size="19" fill="#5f5f5a">mismo Wi-Fi de la casa</text>
+  <text x="70" y="447" font-size="19" fill="#5f5f5a">lya-tejidos.local:8080</text>
+
+  <rect x="42" y="531" width="312" height="100" rx="12" fill="#ffffff" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="70" y="572" font-size="22" font-weight="600" fill="#1f1f1f">Navegador en la Mac</text>
+  <text x="70" y="602" font-size="19" fill="#5f5f5a">localhost:8080</text>
+
+  <line x1="354" y1="410" x2="464" y2="410" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+  <line x1="354" y1="580" x2="464" y2="580" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+
+  <!-- Releases -->
+  <rect x="990" y="970" width="312" height="100" rx="12" fill="#ffffff" stroke="#d6d4cc" stroke-width="2"/>
+  <text x="1018" y="1010" font-size="22" font-weight="600" fill="#1f1f1f">GitHub Releases</text>
+  <text x="1018" y="1042" font-size="19" fill="#5f5f5a">paquete x86_64 versionado</text>
+  <polyline points="988,1020 584,1020 584,852" fill="none" stroke="#c9c7bf" stroke-width="2" marker-end="url(#flecha)"/>
+  <text x="600" y="1005" font-size="19" fill="#5f5f5a">actualizador: descarga y verifica SHA-256</text>
+</svg>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ícono de barra de menú: ~/Library/LaunchAgents/co.lyatejidos.menu.plist
+     Muestra el estado y permite abrir, encender, apagar y actualizar L&A. Solo corre en la sesión gráfica (Aqua). -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>co.lyatejidos.menu</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__HOME__/LyA/actual/python/bin/python3</string>
+    <string>-m</string>
+    <string>app.menu</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__HOME__/LyA/actual</string>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>__HOME__/LyA/registros/menu.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/LyA/registros/menu.log</string>
+</dict>
+</plist>
