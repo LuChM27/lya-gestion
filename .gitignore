@@ -33,3 +33,6 @@ respaldos/
 .DS_Store
 Thumbs.db
 ~$*.docx
+
+# Espacio de trabajo de planes
+.superpowers/
