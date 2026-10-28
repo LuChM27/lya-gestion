@@ -36,3 +36,7 @@ Thumbs.db
 
 # Espacio de trabajo de planes
 .superpowers/
+
+# Datos de desarrollo
+datos-dev/
+respaldos-dev/
