@@ -3,12 +3,13 @@ import { enviar } from "../api";
 
 const SECCIONES = [
   { a: "/", texto: "Inicio" },
+  { a: "/vender", texto: "Vender" },
   { a: "/productos", texto: "Productos" },
   { a: "/insumos", texto: "Insumos" },
 ];
 
 const enlace = ({ isActive }: { isActive: boolean }) =>
-  `flex h-11 flex-1 items-center justify-center rounded-lg px-3 font-semibold md:flex-none md:justify-start focus-visible:outline-2 focus-visible:outline-rosa ${
+  `flex h-11 min-w-0 flex-1 items-center justify-center rounded-lg px-1 text-sm font-semibold md:flex-none md:px-3 md:text-base md:justify-start focus-visible:outline-2 focus-visible:outline-rosa ${
     isActive ? "bg-rosa text-white" : "hover:bg-rosa-palo/60"
   }`;
 

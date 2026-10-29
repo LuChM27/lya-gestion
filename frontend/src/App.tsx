@@ -10,6 +10,7 @@ import Insumos from "./paginas/Insumos";
 import Modelo from "./paginas/Modelo";
 import Productos from "./paginas/Productos";
 import Recuperar from "./paginas/Recuperar";
+import Vender from "./paginas/Vender";
 
 type Sesion = { tipo: "cargando" } | { tipo: "sin-cuenta" } | { tipo: "sin-sesion" } | { tipo: "lista"; usuario: string } | { tipo: "error"; mensaje: string };
 
@@ -44,6 +45,7 @@ function Protegida() {
         <Routes>
           <Route element={<Marco />}>
             <Route index element={<Inicio usuario={sesion.usuario} />} />
+            <Route path="vender" element={<Vender />} />
             <Route path="productos" element={<Productos />} />
             <Route path="productos/:id" element={<Modelo />} />
             <Route path="insumos" element={<Insumos />} />
