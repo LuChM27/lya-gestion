@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Servicio de L&A Gestión: ~/Library/LaunchAgents/co.lyatejidos.gestion.plist
+     Lo copia el instalador y cambia __HOME__ por la carpeta de inicio (launchd no expande ~ ni $HOME).
+     RunAtLoad lo arranca en cada inicio de sesión; KeepAlive lo reinicia si se cae.
+     Apagar: launchctl bootout gui/$(id -u)/co.lyatejidos.gestion (hasta el próximo inicio de sesión). -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>co.lyatejidos.gestion</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__HOME__/LyA/actual/python/bin/python3</string>
+    <string>-m</string>
+    <string>app</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__HOME__/LyA/actual</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>TZ</key>
+    <string>America/Bogota</string>
+    <key>DATA_DIR</key>
+    <string>__HOME__/LyA/datos</string>
+    <key>BACKUP_DIR</key>
+    <string>__HOME__/LyA-Respaldos</string>
+    <key>PORT</key>
+    <string>8080</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/LyA/registros/servicio.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/LyA/registros/servicio.log</string>
+</dict>
+</plist>

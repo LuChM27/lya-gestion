@@ -33,3 +33,13 @@ respaldos/
 .DS_Store
 Thumbs.db
 ~$*.docx
+
+# Espacio de trabajo de planes
+.superpowers/
+
+# Datos de desarrollo
+datos-dev/
+respaldos-dev/
+
+# Paquetes armados
+build/

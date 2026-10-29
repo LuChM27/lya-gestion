@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@import "@fontsource/nunito/400.css";
+@import "@fontsource/nunito/600.css";
+@import "@fontsource/nunito/700.css";
+
+/* Paleta tomada del logo de L&A Tejidos (docs/arquitectura.md). */
+@theme {
+  --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+  --color-rosa: #d9487e;
+  --color-rosa-oscuro: #b8355f;
+  --color-rosa-palo: #e8afcb;
+  --color-menta: #5dbfa3;
+  --color-dorado: #c9a227;
+  --color-tinta: #1f1a1d;
+  --color-fondo: #fff8fb;
+  --color-superficie: #ffffff;
+  --color-borde: #ecd9e2;
+  --color-suave: #6b5c63;
+  --color-error: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-tinta: #f6eef2;
+    --color-fondo: #1b1418;
+    --color-superficie: #261d22;
+    --color-borde: #3d2f36;
+    --color-suave: #c4b3bb;
+    --color-rosa-palo: #5a2f43;
+    --color-error: #ff8a80;
+  }
+}
+
+html,
+body {
+  background: var(--color-fondo);
+  color: var(--color-tinta);
+}
