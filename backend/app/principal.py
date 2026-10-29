@@ -12,7 +12,7 @@ from app.config import Config
 from app.db import crear_motor
 from app.inventario import fotos, insumos, productos
 from app.inventario.existencias import ErrorInventario
-from app.ventas import ventas
+from app.ventas import comprobante, ventas
 from app.version import VERSION
 from app.web import registrar_web
 
@@ -37,6 +37,7 @@ def crear_app(config: Config) -> FastAPI:
     app.include_router(insumos.router)
     app.include_router(fotos.router)
     app.include_router(ventas.router)
+    app.include_router(comprobante.router)
 
     @app.exception_handler(ErrorInventario)
     async def error_de_inventario(_: Request, error: ErrorInventario) -> JSONResponse:
