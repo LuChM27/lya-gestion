@@ -1,0 +1,130 @@
+"""Fotos de productos: se reducen a WebP con miniatura y se guardan con nombre por huella."""
+
+import hashlib
+import io
+import re
+import time
+import warnings
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse
+from PIL import Image, ImageOps, UnidentifiedImageError
+from sqlalchemy import exists, or_, select
+from sqlalchemy.orm import Session
+
+from app.auth.dependencias import UsuarioActual, usuario_actual
+from app.db import SesionDB
+from app.inventario.existencias import ErrorInventario
+from app.inventario.modelos import Modelo, Variante
+
+router = APIRouter()
+
+LADO_GRANDE = 1200
+LADO_MINIATURA = 300
+CALIDAD = 80
+MAX_BYTES = 15 * 1024 * 1024
+FORMATOS = {"JPEG", "PNG", "WEBP"}
+NOMBRE = re.compile(r"^[0-9a-f]{16}(-300)?\.webp$")
+NO_ES_FOTO = "Ese archivo no es una foto."
+PESADA = "La foto pesa más de 15 MB."
+# Una foto subida queda sin dueño hasta que se guarda el formulario: se le da un día.
+PLAZO_SIN_GUARDAR = 24 * 3600
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
+
+def carpeta_fotos(data_dir: Path) -> Path:
+    carpeta = data_dir / "fotos"
+    carpeta.mkdir(parents=True, exist_ok=True)
+    return carpeta
+
+
+def miniatura(nombre: str) -> str:
+    return nombre.replace(".webp", f"-{LADO_MINIATURA}.webp")
+
+
+def _webp(imagen: Image.Image, lado: int) -> bytes:
+    copia = imagen.copy()
+    copia.thumbnail((lado, lado))
+    salida = io.BytesIO()
+    copia.save(salida, "WEBP", quality=CALIDAD)
+    return salida.getvalue()
+
+
+def guardar_foto(datos: bytes, carpeta: Path) -> str:
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(datos)) as prueba:
+                if prueba.format not in FORMATOS:
+                    raise ErrorInventario(NO_ES_FOTO)
+                prueba.verify()
+            with Image.open(io.BytesIO(datos)) as original:
+                imagen = ImageOps.exif_transpose(original)
+                if imagen.mode in ("RGBA", "LA", "P"):
+                    fondo = Image.new("RGB", imagen.size, "white")
+                    fondo.paste(imagen.convert("RGBA"), mask=imagen.convert("RGBA").getchannel("A"))
+                    imagen = fondo
+                else:
+                    imagen = imagen.convert("RGB")
+    except (
+        UnidentifiedImageError,
+        OSError,
+        SyntaxError,
+        ValueError,
+        Image.DecompressionBombError,
+        Image.DecompressionBombWarning,
+    ) as error:
+        raise ErrorInventario(NO_ES_FOTO) from error
+    grande = _webp(imagen, LADO_GRANDE)
+    nombre = f"{hashlib.sha256(grande).hexdigest()[:16]}.webp"
+    (carpeta / nombre).write_bytes(grande)
+    (carpeta / miniatura(nombre)).write_bytes(_webp(imagen, LADO_MINIATURA))
+    return nombre
+
+
+def foto_existe(data_dir: Path, nombre: str | None) -> bool:
+    return nombre is None or (
+        NOMBRE.match(nombre) is not None and (data_dir / "fotos" / nombre).is_file()
+    )
+
+
+def borrar_si_sobra(sesion: Session, data_dir: Path, *fotos: str | None) -> None:
+    """Borra del disco las fotos que ya no usa ningún modelo ni variante, archivados incluidos."""
+    for nombre in {f for f in fotos if f and NOMBRE.match(f)}:
+        usada = exists().where(Modelo.foto == nombre)
+        if sesion.scalar(select(or_(usada, exists().where(Variante.foto == nombre)))):
+            continue
+        for archivo in (nombre, miniatura(nombre)):
+            (data_dir / "fotos" / archivo).unlink(missing_ok=True)
+
+
+def borrar_sin_guardar(sesion: Session, data_dir: Path) -> None:
+    """Borra las fotos que se subieron hace más de un día y nunca se guardaron en un producto."""
+    limite = time.time() - PLAZO_SIN_GUARDAR
+    viejas = [
+        f.name
+        for f in carpeta_fotos(data_dir).glob("*.webp")
+        if NOMBRE.match(f.name) and "-" not in f.name and f.stat().st_mtime < limite
+    ]
+    borrar_si_sobra(sesion, data_dir, *viejas)
+
+
+# Sin async: Pillow tarda con fotos grandes y así corre en un hilo aparte sin frenar el resto.
+@router.post("/api/fotos", status_code=201, dependencies=[Depends(usuario_actual)])
+def subir_foto(archivo: UploadFile, request: Request, sesion: SesionDB) -> dict[str, str]:
+    datos = archivo.file.read(MAX_BYTES + 1)
+    if len(datos) > MAX_BYTES:
+        raise HTTPException(413, PESADA)
+    data_dir = request.app.state.config.data_dir
+    nombre = guardar_foto(datos, carpeta_fotos(data_dir))
+    borrar_sin_guardar(sesion, data_dir)
+    return {"foto": nombre, "miniatura": miniatura(nombre)}
+
+
+@router.get("/fotos/{nombre}", include_in_schema=False)
+def ver_foto(nombre: str, request: Request, _: UsuarioActual) -> FileResponse:
+    ruta = request.app.state.config.data_dir / "fotos" / nombre
+    if not NOMBRE.match(nombre) or not ruta.is_file():
+        raise HTTPException(404)
+    return FileResponse(ruta, media_type="image/webp")

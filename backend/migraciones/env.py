@@ -1,6 +1,7 @@
 from alembic import context
 from sqlalchemy import create_engine
 
+from app.inventario import modelos as _inventario  # noqa: F401  (registra las tablas)
 from app.modelos import Base
 
 url = context.config.attributes.get("url") or context.config.get_main_option("sqlalchemy.url")

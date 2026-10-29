@@ -60,6 +60,24 @@ test("error de entrada muestra el texto del servidor", async () => {
   expect(usuario).toHaveValue("laura");
 });
 
+test("con sesión la navegación lleva a productos e insumos", async () => {
+  simularApi({
+    "GET /api/auth/estado": { cuerpo: { configurado: true } },
+    "GET /api/auth/yo": { cuerpo: { usuario: "laura" } },
+    "GET /api/inventario/modelos": { cuerpo: [] },
+    "GET /api/inventario/insumos": { cuerpo: [] },
+  });
+  montar();
+  expect(await screen.findByText("Hola, laura")).toBeInTheDocument();
+  const productos = screen.getByRole("link", { name: "Productos" });
+  expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
+  await userEvent.click(productos);
+  expect(await screen.findByRole("heading", { level: 1, name: "Productos" })).toBeInTheDocument();
+  expect(productos).toHaveAttribute("aria-current", "page");
+  await userEvent.click(screen.getByRole("link", { name: "Insumos" }));
+  expect(await screen.findByRole("heading", { level: 1, name: "Insumos" })).toBeInTheDocument();
+});
+
 test("cambiar contraseña no se envía dos veces con doble clic", async () => {
   const llamadas = simularApi({
     "POST /api/auth/recuperar": { cuerpo: { codigo_recuperacion: "55512345" }, demoraMs: 50 },

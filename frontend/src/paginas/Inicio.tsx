@@ -1,40 +1,66 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { enviar } from "../api";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { pedir } from "../api";
 import AccesoCelular from "../componentes/AccesoCelular";
+import type { EstadoStock } from "../componentes/Estado";
 import { Boton } from "../componentes/Formulario";
 
+type Pendientes = { productos: number; insumos: number };
+
+const porRevisar = (lista: { estado: EstadoStock }[]) => lista.filter((x) => x.estado !== "ok").length;
+
+function Resumen() {
+  const [pendientes, setPendientes] = useState<Pendientes | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      pedir<{ estado: EstadoStock }[]>("/api/inventario/modelos"),
+      pedir<{ estado: EstadoStock }[]>("/api/inventario/insumos"),
+    ])
+      .then(([modelos, insumos]) => setPendientes({ productos: porRevisar(modelos), insumos: porRevisar(insumos) }))
+      .catch(() => setPendientes(null)); // el resumen es opcional: si falla, Inicio sigue sirviendo
+  }, []);
+
+  if (!pendientes) return null;
+  if (pendientes.productos === 0 && pendientes.insumos === 0) {
+    return <p className="mb-6 rounded-2xl border border-borde bg-superficie p-4">Todo el inventario está en orden.</p>;
+  }
+  const tarjetas = [
+    { n: pendientes.productos, texto: pendientes.productos === 1 ? "1 producto por revisar" : `${pendientes.productos} productos por revisar`, a: "/productos" },
+    { n: pendientes.insumos, texto: pendientes.insumos === 1 ? "1 insumo por revisar" : `${pendientes.insumos} insumos por revisar`, a: "/insumos" },
+  ].filter((t) => t.n > 0);
+  return (
+    <div className="mb-6 grid gap-3 sm:grid-cols-2">
+      {tarjetas.map((t) => (
+        <Link
+          key={t.a}
+          to={t.a}
+          className="flex min-h-11 items-center rounded-2xl border border-alerta bg-alerta-fondo p-4 font-bold text-alerta focus-visible:outline-2 focus-visible:outline-rosa"
+        >
+          {t.texto}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function Inicio({ usuario }: { usuario: string }) {
-  const navegar = useNavigate();
   const [verCelular, setVerCelular] = useState(false);
 
-  async function salir() {
-    await enviar("/api/auth/salir", {});
-    navegar("/entrar", { replace: true });
-  }
-
   return (
-    <div className="min-h-dvh">
-      <header className="flex items-center justify-between bg-rosa-palo px-4 py-3">
-        <span className="text-2xl font-bold text-rosa-oscuro">L&amp;A</span>
-        <button onClick={salir} className="h-11 rounded-lg px-4 font-semibold hover:bg-white/40 focus-visible:outline-2 focus-visible:outline-rosa">
-          Salir
-        </button>
-      </header>
-      <main className="mx-auto max-w-xl px-4 py-8">
-        <h1 className="mb-2 text-2xl font-bold">Hola, {usuario}</h1>
-        <p className="mb-6 text-suave">Aquí irán inventario, ventas y cuentas.</p>
-        <div className="max-w-xs">
-          <Boton onClick={() => setVerCelular((v) => !v)} aria-expanded={verCelular}>
-            Entrar desde el celular
-          </Boton>
-        </div>
-        {verCelular && (
-          <section className="mt-6 rounded-2xl border border-borde bg-superficie p-6">
-            <AccesoCelular />
-          </section>
-        )}
-      </main>
-    </div>
+    <>
+      <h1 className="mb-6 text-2xl font-bold">Hola, {usuario}</h1>
+      <Resumen />
+      <div className="max-w-xs">
+        <Boton onClick={() => setVerCelular((v) => !v)} aria-expanded={verCelular}>
+          Entrar desde el celular
+        </Boton>
+      </div>
+      {verCelular && (
+        <section className="mt-6 rounded-2xl border border-borde bg-superficie p-6">
+          <AccesoCelular />
+        </section>
+      )}
+    </>
   );
 }

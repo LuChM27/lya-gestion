@@ -17,6 +17,11 @@
   --color-borde: #ecd9e2;
   --color-suave: #6b5c63;
   --color-error: #b3261e;
+  --color-alerta: #8a6100;
+  --color-alerta-fondo: #fdf1c7;
+  --color-peligro: #b3261e;
+  --color-peligro-fondo: #fde2e0;
+  --color-sobre-peligro: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,6 +33,11 @@
     --color-suave: #c4b3bb;
     --color-rosa-palo: #5a2f43;
     --color-error: #ff8a80;
+    --color-alerta: #f5cf6b;
+    --color-alerta-fondo: #3d3214;
+    --color-peligro: #ff8a80;
+    --color-peligro-fondo: #4a1f1c;
+    --color-sobre-peligro: #1b1418;
   }
 }
 

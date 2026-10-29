@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse, PlainTextResponse, Response
 CACHE_API = "no-store"
 CACHE_INDEX = "no-cache"
 CACHE_ASSETS = "public, max-age=31536000, immutable"
+CACHE_FOTOS = "private, max-age=31536000, immutable"
 SIN_INTERFAZ = "La interfaz no está instalada."
 
 
@@ -16,6 +17,8 @@ def _regla_de_cache(ruta: str) -> str:
         return CACHE_API
     if ruta.startswith("/assets/"):
         return CACHE_ASSETS
+    if ruta.startswith("/fotos/"):
+        return CACHE_FOTOS
     return CACHE_INDEX
 
 
@@ -26,8 +29,8 @@ def registrar_web(app: FastAPI, web_dir: Path) -> None:
     async def cache(request: Request, call_next) -> Response:
         respuesta = await call_next(request)
         regla = _regla_de_cache(request.url.path)
-        if regla == CACHE_ASSETS and respuesta.status_code != 200:
-            regla = CACHE_API  # un 404 de /assets no se guarda
+        if regla in (CACHE_ASSETS, CACHE_FOTOS) and respuesta.status_code != 200:
+            regla = CACHE_API  # un 404 o un 401 no se guarda
         respuesta.headers["Cache-Control"] = regla
         return respuesta
 

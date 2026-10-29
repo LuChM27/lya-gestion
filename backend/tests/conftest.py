@@ -22,3 +22,10 @@ def cliente(config_tmp) -> TestClient:
     migrar(config_tmp)
     with TestClient(crear_app(config_tmp)) as c:
         yield c
+
+
+@pytest.fixture
+def autenticado(cliente) -> TestClient:
+    r = cliente.post("/api/auth/configurar", json={"usuario": "laura", "contrasena": "tejidos2026"})
+    assert r.status_code == 201
+    return cliente

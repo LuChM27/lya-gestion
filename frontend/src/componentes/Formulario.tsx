@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 
 export function Tarjeta({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
@@ -37,6 +37,53 @@ export function Boton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBut
     >
       {children}
     </button>
+  );
+}
+
+export function BotonSecundario({ children, className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      className={`h-11 rounded-lg border border-borde bg-superficie px-4 font-semibold hover:bg-rosa-palo/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function Selector({
+  etiqueta,
+  opciones,
+  ...props
+}: { etiqueta: string; opciones: readonly (readonly [string, string])[] } & SelectHTMLAttributes<HTMLSelectElement>) {
+  const id = useId();
+  return (
+    <div className="mb-4">
+      <label htmlFor={id} className="mb-1 block text-sm font-semibold">
+        {etiqueta}
+      </label>
+      <select
+        id={id}
+        className="h-11 w-full rounded-lg border border-borde bg-fondo px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-rosa"
+        {...props}
+      >
+        {opciones.map(([valor, texto]) => (
+          <option key={valor} value={valor}>
+            {texto}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+export function Casilla({ etiqueta, ...props }: { etiqueta: string } & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="mb-4 flex min-h-11 items-center gap-3 font-semibold">
+      <input type="checkbox" className="h-5 w-5 accent-rosa" {...props} />
+      {etiqueta}
+    </label>
   );
 }
 
