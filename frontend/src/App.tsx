@@ -3,7 +3,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorApi, pedir } from "./api";
 import CrearCuenta from "./paginas/CrearCuenta";
 import Entrar from "./paginas/Entrar";
+import Marco from "./componentes/Marco";
 import Inicio from "./paginas/Inicio";
+import Insumos from "./paginas/Insumos";
+import Productos from "./paginas/Productos";
 import Recuperar from "./paginas/Recuperar";
 
 type Sesion = { tipo: "cargando" } | { tipo: "sin-cuenta" } | { tipo: "sin-sesion" } | { tipo: "lista"; usuario: string } | { tipo: "error"; mensaje: string };
@@ -35,7 +38,16 @@ function Protegida() {
     case "error":
       return <p role="alert" className="p-6 text-error">{sesion.mensaje}</p>;
     case "lista":
-      return <Inicio usuario={sesion.usuario} />;
+      return (
+        <Routes>
+          <Route element={<Marco />}>
+            <Route index element={<Inicio usuario={sesion.usuario} />} />
+            <Route path="productos" element={<Productos />} />
+            <Route path="insumos" element={<Insumos />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      );
   }
 }
 
