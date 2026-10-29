@@ -32,7 +32,9 @@ def main(env: Mapping[str, str] = os.environ) -> int:
         print(f"El puerto {config.port} está ocupado por otro programa.", file=sys.stderr)
         return 1
     migrar(config)
-    uvicorn.run(crear_app(config), host=HOST, port=config.port)
+    # Sin registro de accesos: la barra de menú consulta /api/salud cada 10 s y el
+    # registro crecería sin límite, tapando los errores reales en el diagnóstico.
+    uvicorn.run(crear_app(config), host=HOST, port=config.port, access_log=False)
     return 0
 
 

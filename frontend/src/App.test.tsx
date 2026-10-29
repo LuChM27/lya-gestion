@@ -59,3 +59,15 @@ test("error de entrada muestra el texto del servidor", async () => {
   expect(await screen.findByText("Usuario o contraseña incorrectos.")).toBeInTheDocument();
   expect(usuario).toHaveValue("laura");
 });
+
+test("cambiar contraseña no se envía dos veces con doble clic", async () => {
+  const llamadas = simularApi({
+    "POST /api/auth/recuperar": { cuerpo: { codigo_recuperacion: "55512345" }, demoraMs: 50 },
+  });
+  montar("/recuperar");
+  await userEvent.type(await screen.findByLabelText("Código de recuperación"), "48213907");
+  await userEvent.type(screen.getByLabelText("Contraseña nueva"), "nueva-clave-1");
+  await userEvent.dblClick(screen.getByRole("button", { name: "Cambiar contraseña" }));
+  expect(await screen.findByText("55512345")).toBeInTheDocument();
+  expect(llamadas.filter((l) => l.clave === "POST /api/auth/recuperar")).toHaveLength(1);
+});

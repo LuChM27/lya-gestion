@@ -25,7 +25,10 @@ def registrar_web(app: FastAPI, web_dir: Path) -> None:
     @app.middleware("http")
     async def cache(request: Request, call_next) -> Response:
         respuesta = await call_next(request)
-        respuesta.headers["Cache-Control"] = _regla_de_cache(request.url.path)
+        regla = _regla_de_cache(request.url.path)
+        if regla == CACHE_ASSETS and respuesta.status_code != 200:
+            regla = CACHE_API  # un 404 de /assets no se guarda
+        respuesta.headers["Cache-Control"] = regla
         return respuesta
 
     @app.get("/{ruta:path}", include_in_schema=False)
@@ -38,4 +41,7 @@ def registrar_web(app: FastAPI, web_dir: Path) -> None:
         archivo = (raiz / ruta).resolve()
         if ruta and archivo.is_relative_to(raiz) and archivo.is_file():
             return FileResponse(archivo)
+        if ruta.startswith("assets/"):
+            # Recurso de una versión anterior: 404, nunca index.html con caché de un año.
+            raise HTTPException(status_code=404)
         return FileResponse(index)

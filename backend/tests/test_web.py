@@ -78,3 +78,9 @@ def test_no_sale_de_web_dir(cliente_web, ruta):
 def test_sin_web_dir_responde_mensaje(cliente):
     r = cliente.get("/")
     assert r.status_code == 503 and "La interfaz no está instalada." in r.text
+
+
+def test_asset_inexistente_es_404(cliente_web):
+    # Una pestaña vieja tras una actualización no debe recibir index.html cacheado un año.
+    r = cliente_web.get("/assets/viejo-123.js")
+    assert r.status_code == 404

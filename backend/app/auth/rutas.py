@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import COOKIE, UsuarioActual
@@ -143,8 +143,23 @@ def recuperar(datos: Recuperacion, request: Request, sesion: SesionDB) -> dict:
         raise HTTPException(status_code=400, detail=CODIGO_MALO)
     request.app.state.limitador.limpiar(_clave(request))
     codigo = nuevo_codigo_recuperacion()
-    usuario.hash_contrasena = hash_secreto(datos.contrasena_nueva)
-    usuario.hash_codigo_recuperacion = hash_secreto(codigo)
+    # Rotación atómica: si otra petición ya usó este código, esta no debe ganar,
+    # o la usuaria anotaría un código que ya no sirve.
+    cambio = sesion.execute(
+        update(Usuario)
+        .where(
+            Usuario.id == usuario.id,
+            Usuario.hash_codigo_recuperacion == usuario.hash_codigo_recuperacion,
+        )
+        .values(
+            hash_contrasena=hash_secreto(datos.contrasena_nueva),
+            hash_codigo_recuperacion=hash_secreto(codigo),
+        )
+        .execution_options(synchronize_session=False)
+    )
+    if cambio.rowcount != 1:
+        sesion.rollback()
+        raise HTTPException(status_code=400, detail=CODIGO_MALO)
     # Cambiar la contraseña cierra todas las sesiones abiertas.
     sesion.execute(delete(Sesion).where(Sesion.usuario_id == usuario.id))
     sesion.commit()

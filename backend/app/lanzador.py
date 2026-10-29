@@ -12,6 +12,7 @@ URL = "http://localhost:8080"
 CHROME = Path("/Applications/Google Chrome.app")
 REGISTROS = Path.home() / "LyA" / "registros"
 LINEAS_DE_REGISTRO = 20
+BYTES_DE_REGISTRO = 64 * 1024
 
 
 def abrir_url(url: str, existe=Path.exists, ejecutar=subprocess.run) -> None:
@@ -34,12 +35,19 @@ def abrir(servicio: Servicio, abrir_url: Callable[[str], None]) -> int:
     return 0
 
 
+def _ultimas_lineas(log: Path) -> list[str]:
+    # Solo el final del archivo: el registro puede ser grande tras meses de uso.
+    with log.open("rb") as f:
+        f.seek(max(0, log.stat().st_size - BYTES_DE_REGISTRO))
+        texto = f.read().decode("utf-8", errors="replace")
+    return texto.splitlines()[-LINEAS_DE_REGISTRO:]
+
+
 def diagnostico(servicio: Servicio, registros: Path) -> str:
     actual = registros.parent / "actual"
     log = registros / "servicio.log"
     if log.is_file():
-        lineas = log.read_text(encoding="utf-8", errors="replace").splitlines()
-        cola = "\n".join(lineas[-LINEAS_DE_REGISTRO:])
+        cola = "\n".join(_ultimas_lineas(log))
     else:
         cola = "(sin registro)"
     return "\n".join(

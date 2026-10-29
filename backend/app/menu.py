@@ -40,7 +40,9 @@ def main() -> None:
             servicio.encender()
             servicio.esperar()
         except ErrorServicio:
-            rumps.alert("L&A no pudo encenderse.", "Usa «Copiar diagnóstico» y envíaselo a Luciano.")
+            rumps.alert(
+                "L&A no pudo encenderse.", "Usa «Copiar diagnóstico» y envíaselo a Luciano."
+            )
         actualizar()
 
     def apagar(_):

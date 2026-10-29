@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 
-type Respuesta = { estado?: number; cuerpo?: unknown };
+type Respuesta = { estado?: number; cuerpo?: unknown; demoraMs?: number };
 
 /** Reemplaza fetch con respuestas fijas por "MÉTODO /ruta". */
 export function simularApi(rutas: Record<string, Respuesta>) {
@@ -11,6 +11,7 @@ export function simularApi(rutas: Record<string, Respuesta>) {
       const clave = `${opciones.method ?? "GET"} ${url}`;
       llamadas.push({ clave, cuerpo: opciones.body ? JSON.parse(String(opciones.body)) : null });
       const r = rutas[clave] ?? { estado: 404, cuerpo: { detail: "No encontrado" } };
+      if (r.demoraMs) await new Promise((listo) => setTimeout(listo, r.demoraMs));
       const estado = r.estado ?? 200;
       return new Response(estado === 204 ? null : JSON.stringify(r.cuerpo ?? {}), {
         status: estado,

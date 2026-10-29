@@ -75,8 +75,9 @@ jobs:
             sleep 1
           done
           curl -fsS http://127.0.0.1:8080/api/salud | grep -q "\"version\":\"$V\""
-          curl -fsSI http://127.0.0.1:8080/ | grep -qi "^cache-control: no-cache"
-          curl -fsSI http://127.0.0.1:8080/api/salud | grep -qi "^cache-control: no-store"
+          # GET con -D: HEAD responde 405 y la prueba pasaría sin probar nada.
+          curl -fsS -D - -o /dev/null http://127.0.0.1:8080/ | grep -qi "^cache-control: no-cache"
+          curl -fsS -D - -o /dev/null http://127.0.0.1:8080/api/salud | grep -qi "^cache-control: no-store"
       - name: Registro del servicio
         if: always()
         run: cat "$RUNNER_TEMP/servicio.log" || true

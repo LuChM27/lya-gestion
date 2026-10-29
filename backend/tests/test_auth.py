@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.modelos import Sesion
@@ -113,3 +113,27 @@ def test_recuperar_sin_cuenta(cliente):
         "/api/auth/recuperar", json={"codigo": "12345678", "contrasena_nueva": "x" * 8}
     )
     assert r.status_code == 400
+
+
+def test_recuperar_concurrente_no_deja_codigo_invalido(cliente, monkeypatch):
+    from app.auth import rutas
+    from app.auth.seguridad import hash_secreto
+    from app.modelos import Usuario
+
+    codigo = configurar(cliente)
+    original = rutas.verificar_secreto
+    otro_hash = hash_secreto("11111111")
+
+    def verificar_y_simular_otra_peticion(hash_guardado, texto):
+        ok = original(hash_guardado, texto)
+        # Otra petición con el mismo código rota el código justo después de verificar.
+        with Session(cliente.app.state.motor) as s:
+            s.execute(update(Usuario).values(hash_codigo_recuperacion=otro_hash))
+            s.commit()
+        return ok
+
+    monkeypatch.setattr(rutas, "verificar_secreto", verificar_y_simular_otra_peticion)
+    r = cliente.post("/api/auth/recuperar", json={"codigo": codigo, "contrasena_nueva": "x" * 8})
+    assert r.status_code == 400
+    with Session(cliente.app.state.motor) as s:
+        assert s.scalar(select(Usuario.hash_codigo_recuperacion)) == otro_hash

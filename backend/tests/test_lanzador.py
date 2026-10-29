@@ -75,3 +75,18 @@ def test_abrir_url_sin_chrome():
 def test_url():
     assert URL == "http://localhost:8080"
     assert lanzador.CHROME == Path("/Applications/Google Chrome.app")
+
+
+def test_diagnostico_lee_solo_el_final(tmp_path, monkeypatch):
+    registros = tmp_path / "registros"
+    registros.mkdir()
+    with (registros / "servicio.log").open("w", encoding="utf-8") as f:
+        f.write("ruido\n" * 200_000)
+        f.write("Traceback: fallo real\n")
+
+    def prohibido(*_a, **_k):
+        raise AssertionError("no debe leer el registro completo")
+
+    monkeypatch.setattr(Path, "read_text", prohibido)
+    texto = diagnostico(servicio(respuestas=[False]), registros)
+    assert "Traceback: fallo real" in texto

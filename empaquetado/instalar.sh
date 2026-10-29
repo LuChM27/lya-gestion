@@ -86,16 +86,28 @@ APP="$APLICACIONES/$NOMBRE_APP"
 rm -rf "$APP"
 osacompile -o "$APP" "$DESTINO/recursos/lanzador.applescript"
 cp "$DESTINO/recursos/icono.icns" "$APP/Contents/Resources/applet.icns"
+# Desde macOS 11 los applets traen Assets.car y CFBundleIconName, que tapan applet.icns.
+rm -f "$APP/Contents/Resources/Assets.car"
+/usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$APP/Contents/Info.plist" 2>/dev/null || true
+if [ "$PLATAFORMA" = aarch64-apple-darwin ]; then
+  # En Apple silicon el bundle modificado necesita volver a firmarse (firma local).
+  codesign --force --sign - "$APP"
+fi
 touch "$APP"
 
 # El Dock guarda la ruta como URL de archivo: espacios y tildes van codificados.
 URL_APP="file://${APP// /%20}/"
 URL_APP="${URL_APP//ó/%C3%B3}"
-if ! defaults read com.apple.dock persistent-apps 2>/dev/null | grep -qF "L&A%20Gesti"; then
-  defaults write com.apple.dock persistent-apps -array-add \
-    "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>${URL_APP//&/&amp;}</string><key>_CFURLStringType</key><integer>15</integer></dict></dict></dict>"
-  killall Dock
-fi
+# Sin pipe: con pipefail, grep -q podía cortar a defaults (SIGPIPE) y duplicar el ícono.
+DOCK="$(defaults read com.apple.dock persistent-apps 2>/dev/null || true)"
+case "$DOCK" in
+  *"L&A%20Gesti"*) ;;
+  *)
+    defaults write com.apple.dock persistent-apps -array-add \
+      "<dict><key>tile-data</key><dict><key>file-data</key><dict><key>_CFURLString</key><string>${URL_APP//&/&amp;}</string><key>_CFURLStringType</key><integer>15</integer></dict></dict></dict>"
+    killall Dock
+    ;;
+esac
 
 if "$FIREWALL" --getglobalstate 2>/dev/null | grep -q "State = [12]"; then
   aviso "El firewall está activo: escribe la contraseña de la Mac para que el celular pueda entrar"
