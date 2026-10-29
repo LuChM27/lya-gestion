@@ -1,21 +1,22 @@
 """Venta rápida: un pedido inmediato que descuenta la vitrina y suma el ingreso a una cuenta."""
 
-from datetime import datetime, time
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
 from app.db import SesionDB
-from app.hora import BOGOTA, a_utc, hoy_bogota
+from app.hora import BOGOTA, a_utc, hoy_bogota, limites_del_dia
 from app.inventario.existencias import ErrorInventario, existencias, registrar_movimiento
 from app.inventario.modelos import Modelo, Variante
 from app.inventario.productos import sin_tildes
 from app.ventas.esquemas import (
     CatalogoItem,
     CuentaSalida,
+    DiaVentas,
     ItemSalida,
     VentaEntrada,
     VentaSalida,
@@ -199,5 +200,64 @@ def catalogo(sesion: SesionDB) -> list[CatalogoItem]:
 @router.post("/ventas", status_code=201)
 def crear_venta(datos: VentaEntrada, sesion: SesionDB) -> VentaSalida:
     pedido = registrar_venta(sesion, datos)
+    sesion.commit()
+    return venta_salida(sesion, pedido)
+
+
+def _venta(sesion: Session, venta_id: int) -> Pedido:
+    pedido = sesion.get(Pedido, venta_id)
+    if pedido is None or pedido.tipo != "inmediata":
+        raise HTTPException(404, "Esa venta no existe.")
+    return pedido
+
+
+def anular_venta(sesion: Session, pedido: Pedido) -> None:
+    """Corrige una venta mal registrada: no es una devolución de dinero, así que el ingreso se quita."""
+    if pedido.estado == "cancelado":
+        raise HTTPException(409, "Esta venta ya está anulada.")
+    pedido.estado = "cancelado"
+    pedido.actualizado = ahora_utc()
+    for item in sesion.scalars(select(PedidoItem).where(PedidoItem.pedido_id == pedido.id)):
+        registrar_movimiento(
+            sesion,
+            tipo="devolucion",
+            cantidad=Decimal(item.cantidad),
+            variante_id=item.variante_id,
+            pedido_id=pedido.id,
+            nota=f"Venta N.º {numero(pedido.id)} anulada",
+        )
+    pagos = select(Pago.id).where(Pago.pedido_id == pedido.id)
+    sesion.execute(delete(Transaccion).where(Transaccion.pago_id.in_(pagos)))
+    sesion.execute(delete(Pago).where(Pago.pedido_id == pedido.id))
+    sesion.flush()
+
+
+@router.get("/ventas")
+def ventas_del_dia(sesion: SesionDB, dia: date | None = None) -> DiaVentas:
+    dia = dia or hoy_bogota()
+    inicio, fin = limites_del_dia(dia)
+    pedidos = sesion.scalars(
+        select(Pedido)
+        .where(Pedido.tipo == "inmediata", Pedido.fecha >= inicio, Pedido.fecha < fin)
+        .order_by(Pedido.fecha.desc(), Pedido.id.desc())
+    ).all()
+    validas = [p for p in pedidos if p.estado != "cancelado"]
+    return DiaVentas(
+        dia=dia,
+        ventas=[venta_salida(sesion, p) for p in pedidos],
+        total=sum(p.total for p in validas),
+        cantidad=len(validas),
+    )
+
+
+@router.get("/ventas/{venta_id}")
+def ver_venta(venta_id: int, sesion: SesionDB) -> VentaSalida:
+    return venta_salida(sesion, _venta(sesion, venta_id))
+
+
+@router.post("/ventas/{venta_id}/anular")
+def anular(venta_id: int, sesion: SesionDB) -> VentaSalida:
+    pedido = _venta(sesion, venta_id)
+    anular_venta(sesion, pedido)
     sesion.commit()
     return venta_salida(sesion, pedido)

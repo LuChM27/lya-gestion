@@ -170,3 +170,56 @@ def test_venta_de_ayer(autenticado, vitrina, config_tmp):
 def test_canal_invalido_da_mensaje_en_espanol(autenticado, vitrina):
     r = vender(autenticado, [item(vitrina["rosa"])], canal="radio")
     assert r.status_code == 422 and r.json()["detail"] == DATO_INVALIDO
+
+
+def test_ventas_del_dia_con_total(autenticado, vitrina):
+    a = vender(autenticado, [item(vitrina["rosa"])]).json()
+    b = vender(autenticado, [item(vitrina["rosa"])], descuento=5000).json()
+    c = vender(autenticado, [item(vitrina["negro"])]).json()
+    assert autenticado.post(f"/api/ventas/{c['id']}/anular").status_code == 200
+    r = autenticado.get("/api/ventas")
+    assert r.status_code == 200
+    dia = r.json()
+    assert dia["dia"] == hoy_bogota().isoformat()
+    assert dia["cantidad"] == 2 and dia["total"] == a["total"] + b["total"]
+    assert [v["id"] for v in dia["ventas"]] == [c["id"], b["id"], a["id"]]
+
+
+def test_venta_de_la_noche_cuenta_en_su_dia(autenticado, vitrina, config_tmp):
+    from datetime import datetime
+
+    v = vender(autenticado, [item(vitrina["rosa"])]).json()
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        s.get(Pedido, v["id"]).fecha = datetime(2026, 10, 30, 1, 0)
+        s.commit()
+    motor.dispose()
+    del_29 = autenticado.get("/api/ventas?dia=2026-10-29").json()
+    del_30 = autenticado.get("/api/ventas?dia=2026-10-30").json()
+    assert [x["id"] for x in del_29["ventas"]] == [v["id"]]
+    assert del_30["ventas"] == []
+
+
+def test_anular_devuelve_stock_y_quita_el_ingreso(autenticado, vitrina, config_tmp):
+    v = vender(autenticado, [item(vitrina["rosa"], 2)]).json()
+    r = autenticado.post(f"/api/ventas/{v['id']}/anular")
+    assert r.status_code == 200
+    anulada = r.json()
+    assert anulada["estado"] == "cancelado"
+    assert anulada["comprobante"] != v["comprobante"]
+    assert existencia_de(autenticado, vitrina["modelo"]["id"], vitrina["rosa"]) == 3
+    assert contar(config_tmp, Transaccion) == 0 and contar(config_tmp, Pago) == 0
+    assert autenticado.get(f"/api/ventas/{v['id']}").json()["estado"] == "cancelado"
+
+
+def test_anular_dos_veces_da_409(autenticado, vitrina):
+    v = vender(autenticado, [item(vitrina["rosa"])]).json()
+    autenticado.post(f"/api/ventas/{v['id']}/anular")
+    r = autenticado.post(f"/api/ventas/{v['id']}/anular")
+    assert r.status_code == 409 and r.json()["detail"] == "Esta venta ya está anulada."
+
+
+def test_venta_inexistente_da_404(autenticado):
+    r = autenticado.get("/api/ventas/999")
+    assert r.status_code == 404 and r.json()["detail"] == "Esa venta no existe."
+    assert autenticado.post("/api/ventas/999/anular").status_code == 404
