@@ -4,7 +4,7 @@ import { actualizar, borrar, enviar, ErrorApi, pedir } from "../api";
 import AccionCantidad from "../componentes/AccionCantidad";
 import Archivar from "../componentes/Archivar";
 import Estado from "../componentes/Estado";
-import { BotonSecundario, Campo, Selector } from "../componentes/Formulario";
+import { Boton, BotonSecundario, Campo, Selector } from "../componentes/Formulario";
 import FormularioInsumo from "../componentes/FormularioInsumo";
 import Historial from "../componentes/Historial";
 import { cantidad, fecha, leerNumero, precio } from "../formato";
@@ -166,6 +166,7 @@ export default function Insumo() {
         {accion === "contar" && (
           <AccionCantidad
             etiqueta="Cantidad contada"
+            permitirCero
             alCancelar={() => setAccion(null)}
             alGuardar={async (n) => {
               await enviar(`${ruta}/conteo`, { cantidad_contada: n });
@@ -180,6 +181,19 @@ export default function Insumo() {
           </>
         )}
       </div>
+      {!insumo.activo && (
+        <Boton
+          onClick={async () => {
+            try {
+              setInsumo(await enviar<TipoInsumo>(`${ruta}/restaurar`, {}));
+            } catch (err) {
+              setError(err instanceof ErrorApi ? err.mensaje : String(err));
+            }
+          }}
+        >
+          Volver a usar
+        </Boton>
+      )}
       {insumo.activo && (
         <Archivar
           boton="Archivar insumo"

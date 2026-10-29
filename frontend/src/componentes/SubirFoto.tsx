@@ -3,6 +3,9 @@ import { ErrorApi, subir } from "../api";
 import { miniatura } from "../inventario";
 
 const LADO = 1600;
+// JPEG, PNG y WebP suben tal cual: el servidor los reduce y los endereza según la orientación EXIF.
+const DIRECTOS = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_BYTES = 15 * 1024 * 1024;
 const NO_SE_LEE = "No se pudo leer esa foto. Prueba con otra o expórtala como JPEG.";
 
 /** Dibuja la foto en un canvas: así Safari convierte HEIC a JPEG y la foto sube liviana. */
@@ -32,15 +35,18 @@ export default function SubirFoto({ foto, alSubir }: { foto: string | null; alSu
     setError("");
     setSubiendo(true);
     try {
-      let blob: Blob;
-      try {
-        blob = await reducir(archivo);
-      } catch {
-        setError(NO_SE_LEE);
-        return;
-      }
       const form = new FormData();
-      form.append("archivo", blob, "foto.jpg");
+      if (DIRECTOS.has(archivo.type) && archivo.size <= MAX_BYTES) {
+        form.append("archivo", archivo, archivo.name);
+      } else {
+        // HEIC o fotos muy pesadas: el navegador la convierte a JPEG reducido.
+        try {
+          form.append("archivo", await reducir(archivo), "foto.jpg");
+        } catch {
+          setError(NO_SE_LEE);
+          return;
+        }
+      }
       const r = await subir<{ foto: string }>("/api/fotos", form);
       alSubir(r.foto);
     } catch (err) {

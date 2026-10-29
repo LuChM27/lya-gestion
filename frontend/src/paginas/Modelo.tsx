@@ -11,7 +11,7 @@ import SubirFoto from "../componentes/SubirFoto";
 import { cantidad, leerNumero, pesos, unidades } from "../formato";
 import { CATEGORIAS, miniatura, NUMERO_INVALIDO, type ModeloDetalle, type Variante } from "../inventario";
 
-type Accion = "vitrina" | "merma" | "contar" | "historial" | null;
+type Accion = "vitrina" | "merma" | "contar" | "historial" | "editar" | null;
 
 function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambiar: () => void }) {
   const [accion, setAccion] = useState<Accion>(null);
@@ -40,12 +40,37 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
           <Estado estado={variante.estado} />
         </div>
       </div>
+      {!variante.activo && (
+        <BotonSecundario
+          className="mt-3"
+          onClick={async () => {
+            await enviar(`${ruta}/restaurar`, {});
+            alCambiar();
+          }}
+        >
+          Volver a usar
+        </BotonSecundario>
+      )}
       {variante.activo && accion === null && (
         <div className="mt-3 flex flex-wrap gap-2">
           <BotonSecundario onClick={() => setAccion("vitrina")}>Sumar a vitrina</BotonSecundario>
           <BotonSecundario onClick={() => setAccion("merma")}>Registrar merma</BotonSecundario>
           <BotonSecundario onClick={() => setAccion("contar")}>Contar</BotonSecundario>
           <BotonSecundario onClick={() => setAccion("historial")}>Ver movimientos</BotonSecundario>
+          <BotonSecundario onClick={() => setAccion("editar")}>Editar variante</BotonSecundario>
+          <Archivar
+            boton="Archivar variante"
+            nombre={variante.color}
+            alArchivar={async () => {
+              await borrar(ruta);
+              alCambiar();
+            }}
+          />
+        </div>
+      )}
+      {accion === "editar" && (
+        <div className="mt-3">
+          <FormularioVariante inicial={variante} ruta={ruta} metodo="PUT" alGuardar={listo} alCancelar={() => setAccion(null)} />
         </div>
       )}
       {(accion === "vitrina" || accion === "merma") && (
@@ -61,6 +86,7 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
       {accion === "contar" && (
         <AccionCantidad
           etiqueta="Cantidad contada"
+          permitirCero
           alCancelar={() => setAccion(null)}
           alGuardar={async (n) => {
             await enviar(`${ruta}/conteo`, { cantidad_contada: n });
@@ -78,12 +104,24 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
   );
 }
 
-function NuevaVariante({ modeloId, alGuardar, alCancelar }: { modeloId: number; alGuardar: () => void; alCancelar: () => void }) {
-  const [color, setColor] = useState("");
-  const [sku, setSku] = useState("");
-  const [minimo, setMinimo] = useState("");
-  const [piezaUnica, setPiezaUnica] = useState(false);
-  const [foto, setFoto] = useState<string | null>(null);
+function FormularioVariante({
+  inicial,
+  ruta,
+  metodo,
+  alGuardar,
+  alCancelar,
+}: {
+  inicial?: Variante;
+  ruta: string;
+  metodo: "POST" | "PUT";
+  alGuardar: () => void;
+  alCancelar: () => void;
+}) {
+  const [color, setColor] = useState(inicial?.color ?? "");
+  const [sku, setSku] = useState(inicial?.sku ?? "");
+  const [minimo, setMinimo] = useState(inicial ? String(inicial.stock_minimo).replace(".", ",") : "");
+  const [piezaUnica, setPiezaUnica] = useState(inicial?.pieza_unica ?? false);
+  const [foto, setFoto] = useState<string | null>(inicial?.foto ?? null);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -95,13 +133,14 @@ function NuevaVariante({ modeloId, alGuardar, alCancelar }: { modeloId: number; 
     if (stockMinimo === null || stockMinimo < 0) return setError(NUMERO_INVALIDO);
     setEnviando(true);
     try {
-      await enviar(`/api/inventario/modelos/${modeloId}/variantes`, {
+      const datos = {
         color: color.trim(),
         sku: sku.trim() || null,
         stock_minimo: piezaUnica ? 0 : stockMinimo,
         pieza_unica: piezaUnica,
         foto,
-      });
+      };
+      await (metodo === "POST" ? enviar(ruta, datos) : actualizar(ruta, datos));
       alGuardar();
     } catch (err) {
       setError(err instanceof ErrorApi ? err.mensaje : String(err));
@@ -113,7 +152,7 @@ function NuevaVariante({ modeloId, alGuardar, alCancelar }: { modeloId: number; 
   return (
     <form onSubmit={alEnviar} noValidate className="mb-4 rounded-2xl border border-borde bg-superficie p-4">
       <Campo etiqueta="Color" value={color} onChange={(e) => { setColor(e.target.value); setError(""); }} />
-      <Campo etiqueta="Código (opcional)" required={false} value={sku} onChange={(e) => setSku(e.target.value)} />
+      <Campo etiqueta="Código (opcional)" required={false} maxLength={30} value={sku} onChange={(e) => setSku(e.target.value)} />
       <Casilla etiqueta="Pieza única" checked={piezaUnica} onChange={(e) => setPiezaUnica(e.target.checked)} />
       {!piezaUnica && (
         <Campo etiqueta="Stock mínimo" inputMode="decimal" required={false} value={minimo} onChange={(e) => { setMinimo(e.target.value); setError(""); }} />
@@ -184,8 +223,9 @@ export default function Modelo() {
         {modelo.activo && !agregando && <BotonSecundario onClick={() => setAgregando(true)}>Agregar variante</BotonSecundario>}
       </div>
       {agregando && (
-        <NuevaVariante
-          modeloId={modelo.id}
+        <FormularioVariante
+          ruta={`${ruta}/variantes`}
+          metodo="POST"
           alCancelar={() => setAgregando(false)}
           alGuardar={() => {
             setAgregando(false);
@@ -201,6 +241,19 @@ export default function Modelo() {
           <TarjetaVariante key={v.id} variante={v} alCambiar={cargar} />
         ))}
       </ul>
+      {!modelo.activo && (
+        <Boton
+          onClick={async () => {
+            try {
+              setModelo(await enviar<ModeloDetalle>(`${ruta}/restaurar`, {}));
+            } catch (err) {
+              setError(err instanceof ErrorApi ? err.mensaje : String(err));
+            }
+          }}
+        >
+          Volver a usar
+        </Boton>
+      )}
       {modelo.activo && (
         <Archivar
           boton="Archivar modelo"

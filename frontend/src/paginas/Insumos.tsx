@@ -13,6 +13,7 @@ export default function Insumos() {
   const [buscar, setBuscar] = useState("");
   const [tipo, setTipo] = useState("");
   const [creando, setCreando] = useState(false);
+  const [archivados, setArchivados] = useState(false);
   const [error, setError] = useState("");
   const ultima = useRef(0);
 
@@ -20,6 +21,7 @@ export default function Insumos() {
     const parametros = new URLSearchParams();
     if (buscar.trim()) parametros.set("buscar", buscar.trim());
     if (tipo) parametros.set("tipo", tipo);
+    if (archivados) parametros.set("archivados", "true");
     const consulta = parametros.toString();
     const numero = ++ultima.current;
     pedir<Insumo[]>(`/api/inventario/insumos${consulta ? `?${consulta}` : ""}`)
@@ -31,9 +33,9 @@ export default function Insumos() {
       .catch((err) => {
         if (numero === ultima.current) setError(err instanceof ErrorApi ? err.mensaje : String(err));
       });
-  }, [buscar, tipo]);
+  }, [buscar, tipo, archivados]);
 
-  const filtrando = buscar.trim() !== "" || tipo !== "";
+  const filtrando = buscar.trim() !== "" || tipo !== "" || archivados;
 
   return (
     <>
@@ -74,6 +76,11 @@ export default function Insumos() {
           </div>
         </>
       )}
+      <div className="mb-4">
+        <BotonSecundario onClick={() => setArchivados((a) => !a)} aria-pressed={archivados}>
+          {archivados ? "Ver activos" : "Ver archivados"}
+        </BotonSecundario>
+      </div>
       {error && <p role="alert" className="mb-4 font-semibold text-error">{error}</p>}
       {insumos?.length === 0 && !filtrando && !creando && (
         <div className="rounded-2xl border border-dashed border-borde p-8 text-center">
@@ -86,9 +93,9 @@ export default function Insumos() {
       {insumos?.length === 0 && filtrando && (
         <div className="rounded-2xl border border-dashed border-borde p-8 text-center">
           <p className="mb-4 text-suave">
-            {buscar.trim() ? `No hay insumos que coincidan con “${buscar.trim()}”.` : "No hay insumos de este tipo."}
+            {archivados && !buscar.trim() ? "No hay insumos archivados." : buscar.trim() ? `No hay insumos que coincidan con “${buscar.trim()}”.` : "No hay insumos de este tipo."}
           </p>
-          <BotonSecundario onClick={() => { setBuscar(""); setTipo(""); }}>
+          <BotonSecundario onClick={() => { setBuscar(""); setTipo(""); setArchivados(false); }}>
             {buscar.trim() ? "Borrar búsqueda" : "Ver todos"}
           </BotonSecundario>
         </div>

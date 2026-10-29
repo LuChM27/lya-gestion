@@ -25,6 +25,12 @@ export function cantidad(n: number): string {
   return conDecimales(n, 3);
 }
 
+/** Cuántos decimales escribió: 12,5 → 1. */
+export function decimales(n: number): number {
+  const texto = String(n);
+  return texto.includes("e-") ? 99 : (texto.split(".")[1] ?? "").length;
+}
+
 export function unidades(n: number): string {
   return `${cantidad(n)} ${n === 1 ? "unidad" : "unidades"}`;
 }

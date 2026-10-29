@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ErrorApi } from "../api";
-import { leerNumero } from "../formato";
+import { decimales, leerNumero } from "../formato";
 import { NUMERO_INVALIDO, TIPOS_INSUMO, type Insumo } from "../inventario";
 import { Boton, BotonSecundario, Campo, Casilla, MensajeError, Selector } from "./Formulario";
 
@@ -54,6 +54,10 @@ export default function FormularioInsumo({
       (precio.trim() && (precioUnitario === null || precioUnitario < 0))
     ) {
       return setError(NUMERO_INVALIDO);
+    }
+    if (precioUnitario !== null && decimales(precioUnitario) > 2) return setError("Usa máximo 2 decimales en los precios.");
+    if (decimales(stockMinimo) > 3 || (factorCompra !== null && decimales(factorCompra) > 3)) {
+      return setError("Usa máximo 3 decimales.");
     }
     setEnviando(true);
     try {

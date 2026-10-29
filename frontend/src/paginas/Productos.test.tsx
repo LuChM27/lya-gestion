@@ -214,6 +214,84 @@ test("foto que no se puede leer muestra el error", async () => {
   ).toBeInTheDocument();
 });
 
+test("foto JPEG sube tal cual para que el servidor la enderece", async () => {
+  const leer = vi.fn();
+  vi.stubGlobal("createImageBitmap", leer);
+  const llamadas = simularApi({
+    "GET /api/inventario/modelos": { cuerpo: [] },
+    "POST /api/fotos": { estado: 201, cuerpo: { foto: "0123456789abcdef.webp", miniatura: "0123456789abcdef-300.webp" } },
+  });
+  montar("/productos");
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
+  const original = new File(["jpeg"], "a.jpg", { type: "image/jpeg" });
+  await userEvent.upload(screen.getByLabelText("Foto"), original);
+  await screen.findByRole("img", { name: "Foto del producto" });
+  expect(leer).not.toHaveBeenCalled();
+  const form = llamadas.find((l) => l.clave === "POST /api/fotos")?.cuerpo as FormData;
+  expect((form.get("archivo") as File).name).toBe("a.jpg");
+});
+
+test("archivados se ven y se vuelven a usar", async () => {
+  const llamadas = simularApi({
+    "GET /api/inventario/modelos": { cuerpo: [] },
+    "GET /api/inventario/modelos?archivados=true": { cuerpo: [{ ...MODELO, activo: false, variantes: 1 }] },
+    "GET /api/inventario/modelos/7": { cuerpo: { ...MODELO, activo: false } },
+    "POST /api/inventario/modelos/7/restaurar": { cuerpo: MODELO },
+  });
+  montar("/productos");
+  await userEvent.click(await screen.findByRole("button", { name: "Ver archivados" }));
+  await userEvent.click(await screen.findByText("Bolso balde"));
+  await userEvent.click(await screen.findByRole("button", { name: "Volver a usar" }));
+  expect(llamadas.some((l) => l.clave === "POST /api/inventario/modelos/7/restaurar")).toBe(true);
+  expect(await screen.findByRole("button", { name: "Archivar modelo" })).toBeInTheDocument();
+});
+
+test("editar variante envía los cambios", async () => {
+  const llamadas = simularApi({
+    "GET /api/inventario/modelos/7": { cuerpo: MODELO },
+    "PUT /api/inventario/variantes/3": { cuerpo: { ...VARIANTE, color: "Rosa viejo" } },
+  });
+  montar("/productos/7");
+  await userEvent.click(await screen.findByRole("button", { name: "Editar variante" }));
+  const color = screen.getByLabelText("Color");
+  expect(color).toHaveValue("Rosa palo");
+  await userEvent.clear(color);
+  await userEvent.type(color, "Rosa viejo");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar variante" }));
+  expect(llamadas.find((l) => l.clave === "PUT /api/inventario/variantes/3")?.cuerpo).toEqual({
+    color: "Rosa viejo",
+    sku: "LA-0003",
+    stock_minimo: 2,
+    pieza_unica: false,
+    foto: null,
+  });
+});
+
+test("archivar variante pide confirmación", async () => {
+  const llamadas = simularApi({
+    "GET /api/inventario/modelos/7": { cuerpo: MODELO },
+    "DELETE /api/inventario/variantes/3": { estado: 204 },
+  });
+  montar("/productos/7");
+  await userEvent.click(await screen.findByRole("button", { name: "Archivar variante" }));
+  expect(screen.getByText("¿Archivar Rosa palo? Sus ventas y movimientos se conservan.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Archivar" }));
+  expect(llamadas.some((l) => l.clave === "DELETE /api/inventario/variantes/3")).toBe(true);
+});
+
+test.each([
+  ["0", "Escribe una cantidad mayor que 0."],
+  ["0,1234", "Usa máximo 3 decimales."],
+])("merma de %s no se envía", async (texto, mensaje) => {
+  const llamadas = simularApi({ "GET /api/inventario/modelos/7": { cuerpo: MODELO } });
+  montar("/productos/7");
+  await userEvent.click(await screen.findByRole("button", { name: "Registrar merma" }));
+  await userEvent.type(screen.getByLabelText("Cantidad"), texto);
+  await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+  expect(await screen.findByText(mensaje)).toBeInTheDocument();
+  expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
+});
+
 test("foto se reduce en el navegador y se sube", async () => {
   vi.stubGlobal("createImageBitmap", vi.fn().mockResolvedValue({ width: 4000, height: 3000, close: vi.fn() }));
   const dibujar = vi.fn();
@@ -227,7 +305,7 @@ test("foto se reduce en el navegador y se sube", async () => {
   });
   montar("/productos");
   await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
-  await userEvent.upload(screen.getByLabelText("Foto"), new File(["x"], "a.jpg", { type: "image/jpeg" }));
+  await userEvent.upload(screen.getByLabelText("Foto"), new File(["x"], "a.heic", { type: "image/heic" }));
   expect(await screen.findByRole("img", { name: "Foto del producto" })).toHaveAttribute(
     "src",
     "/fotos/0123456789abcdef-300.webp",

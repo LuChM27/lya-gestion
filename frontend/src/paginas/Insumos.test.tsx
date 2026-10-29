@@ -162,3 +162,38 @@ test("inicio sin pendientes", async () => {
   montar("/");
   expect(await screen.findByText("Todo el inventario está en orden.")).toBeInTheDocument();
 });
+
+test("insumo archivado se vuelve a usar", async () => {
+  const llamadas = simularApi({
+    "GET /api/inventario/insumos/5": { cuerpo: { ...HILO, activo: false } },
+    "POST /api/inventario/insumos/5/restaurar": { cuerpo: HILO },
+  });
+  montar("/insumos/5");
+  await userEvent.click(await screen.findByRole("button", { name: "Volver a usar" }));
+  expect(llamadas.some((l) => l.clave === "POST /api/inventario/insumos/5/restaurar")).toBe(true);
+  expect(await screen.findByRole("button", { name: "Registrar entrada" })).toBeInTheDocument();
+});
+
+test("lista de insumos archivados", async () => {
+  simularApi({
+    "GET /api/inventario/insumos": { cuerpo: [HILO] },
+    "GET /api/inventario/insumos?archivados=true": { cuerpo: [ARGOLLAS] },
+  });
+  montar("/insumos");
+  await userEvent.click(await screen.findByRole("button", { name: "Ver archivados" }));
+  expect(await screen.findByText("Argollas doradas")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Ver activos" }));
+  expect(await screen.findByText("Hilo algodón rosa")).toBeInTheDocument();
+});
+
+test("precio con más de 2 decimales no se envía", async () => {
+  const llamadas = simularApi({ "GET /api/inventario/insumos": { cuerpo: [] } });
+  montar("/insumos");
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar insumo" }));
+  await userEvent.type(screen.getByLabelText("Nombre"), "Cuentas");
+  await userEvent.type(screen.getByLabelText("Unidad"), "unidades");
+  await userEvent.type(screen.getByLabelText("Precio por unidad (opcional)"), "27,555");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar insumo" }));
+  expect(await screen.findByText("Usa máximo 2 decimales en los precios.")).toBeInTheDocument();
+  expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
+});

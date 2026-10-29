@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from "react";
 import { ErrorApi } from "../api";
-import { leerNumero } from "../formato";
+import { decimales, leerNumero } from "../formato";
 import { NUMERO_INVALIDO } from "../inventario";
 import { Boton, BotonSecundario, Campo, MensajeError } from "./Formulario";
 
 /** Formulario corto en la misma tarjeta: una cantidad y Guardar/Cancelar. */
 export default function AccionCantidad({
   etiqueta,
+  permitirCero = false,
   children,
   alGuardar,
   alCancelar,
 }: {
   etiqueta: string;
+  permitirCero?: boolean;
   children?: React.ReactNode;
   alGuardar: (cantidad: number) => Promise<void>;
   alCancelar: () => void;
@@ -25,6 +27,8 @@ export default function AccionCantidad({
     if (enviando) return;
     const n = leerNumero(texto);
     if (n === null || n < 0) return setError(NUMERO_INVALIDO);
+    if (n === 0 && !permitirCero) return setError("Escribe una cantidad mayor que 0.");
+    if (decimales(n) > 3) return setError("Usa máximo 3 decimales.");
     setEnviando(true);
     try {
       await alGuardar(n);
