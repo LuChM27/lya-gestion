@@ -1,0 +1,172 @@
+from datetime import timedelta
+
+import pytest
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.db import crear_motor
+from app.hora import hoy_bogota
+from app.principal import DATO_INVALIDO
+from app.ventas.modelos import Pago, Pedido, PedidoItem, Transaccion
+from tests.test_productos import crear_modelo, crear_variante, mover
+
+NEQUI = 2
+
+
+@pytest.fixture
+def vitrina(autenticado) -> dict:
+    m = crear_modelo(autenticado, nombre="Bolso balde", precio_venta=125000, horas_tejido=6)
+    rosa = crear_variante(autenticado, m["id"], color="Rosa palo")
+    negro = crear_variante(autenticado, m["id"], color="Negro")
+    mover(autenticado, rosa["id"], "ingreso_vitrina", 3)
+    mover(autenticado, negro["id"], "ingreso_vitrina", 1)
+    return {"modelo": m, "rosa": rosa["id"], "negro": negro["id"]}
+
+
+def vender(c, items, **datos):
+    cuerpo = {"canal": "instagram", "cuenta_id": NEQUI, "items": items} | datos
+    return c.post("/api/ventas", json=cuerpo)
+
+
+def item(variante_id: int, cantidad: int = 1) -> dict:
+    return {"variante_id": variante_id, "cantidad": cantidad}
+
+
+def existencia_de(c, modelo_id: int, variante_id: int):
+    m = c.get(f"/api/inventario/modelos/{modelo_id}").json()
+    return next(v["existencia"] for v in m["variantes"] if v["id"] == variante_id)
+
+
+def contar(config, modelo) -> int:
+    motor = crear_motor(config)
+    with Session(motor) as s:
+        n = s.scalar(select(func.count()).select_from(modelo))
+    motor.dispose()
+    return n
+
+
+def test_sin_sesion_responde_401(cliente):
+    assert cliente.get("/api/ventas/catalogo").status_code == 401
+    assert cliente.post("/api/ventas", json={}).status_code == 401
+
+
+def test_cuentas_iniciales(autenticado):
+    r = autenticado.get("/api/cuentas")
+    assert [c["nombre"] for c in r.json()] == ["Efectivo", "Nequi", "Daviplata"]
+
+
+def test_catalogo_solo_lo_que_hay_en_vitrina(autenticado, vitrina):
+    autenticado.delete(f"/api/inventario/variantes/{vitrina['negro']}")
+    r = autenticado.get("/api/ventas/catalogo")
+    assert r.status_code == 200
+    assert [(i["color"], i["existencia"], i["precio"]) for i in r.json()] == [
+        ("Rosa palo", 3, 125000)
+    ]
+    assert r.json()[0]["nombre"] == "Bolso balde"
+
+
+def test_venta_descuenta_stock_y_suma_a_la_cuenta(autenticado, vitrina, config_tmp):
+    r = vender(autenticado, [item(vitrina["rosa"], 2)], descuento=10000)
+    assert r.status_code == 201, r.text
+    v = r.json()
+    assert v["total"] == 240000 and v["subtotal"] == 250000 and v["descuento"] == 10000
+    assert len(v["numero"]) == 4 and v["numero"] == f"{v['id']:04d}"
+    assert v["estado"] == "entregado" and v["cliente"] == "Cliente de mostrador"
+    assert v["cuenta"] == {"id": NEQUI, "nombre": "Nequi"}
+    assert v["items"] == [
+        {
+            "variante_id": vitrina["rosa"],
+            "modelo": "Bolso balde",
+            "color": "Rosa palo",
+            "cantidad": 2,
+            "precio_unitario": 125000,
+            "subtotal": 250000,
+        }
+    ]
+    assert v["comprobante"].startswith(f"/api/pedidos/{v['id']}/comprobante.pdf?v=")
+    assert existencia_de(autenticado, vitrina["modelo"]["id"], vitrina["rosa"]) == 1
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        t = s.scalars(select(Transaccion)).one()
+        assert (t.tipo, t.monto, t.cuenta_id) == ("ingreso", 240000, NEQUI)
+        assert t.descripcion == f"Venta N.º {v['numero']}"
+        assert s.scalars(select(PedidoItem)).one().costo_unitario == 60000
+    motor.dispose()
+
+
+def test_venta_sin_stock_no_deja_nada(autenticado, vitrina, config_tmp):
+    r = vender(autenticado, [item(vitrina["rosa"]), item(vitrina["negro"], 2)])
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Solo hay 1 de Bolso balde Negro."
+    for modelo in (Pedido, PedidoItem, Pago, Transaccion):
+        assert contar(config_tmp, modelo) == 0
+    assert existencia_de(autenticado, vitrina["modelo"]["id"], vitrina["rosa"]) == 3
+
+
+def test_misma_variante_dos_veces_se_suma(autenticado, vitrina):
+    r = vender(autenticado, [item(vitrina["rosa"], 2), item(vitrina["rosa"], 2)])
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Solo hay 3 de Bolso balde Rosa palo."
+
+
+def test_descuento_mayor_que_subtotal_da_422(autenticado, vitrina):
+    r = vender(autenticado, [item(vitrina["rosa"])], descuento=125001)
+    assert r.status_code == 422
+    assert r.json()["detail"] == "El descuento no puede ser mayor que el subtotal."
+
+
+def test_regalo_sin_pago(autenticado, vitrina, config_tmp):
+    r = vender(autenticado, [item(vitrina["rosa"])], descuento=125000)
+    assert r.status_code == 201
+    assert r.json()["total"] == 0 and r.json()["cuenta"] is None
+    assert contar(config_tmp, Transaccion) == 0 and contar(config_tmp, Pago) == 0
+
+
+def test_variante_archivada_da_422(autenticado, vitrina):
+    autenticado.delete(f"/api/inventario/variantes/{vitrina['negro']}")
+    r = vender(autenticado, [item(vitrina["negro"])])
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Bolso balde Negro está archivado."
+
+
+def test_variante_inexistente_da_404(autenticado, vitrina):
+    r = vender(autenticado, [item(999)])
+    assert r.status_code == 404 and r.json()["detail"] == "Ese producto no existe."
+
+
+@pytest.mark.parametrize("cuenta_id", [999, "inactiva"])
+def test_cuenta_inactiva_da_422(autenticado, vitrina, config_tmp, cuenta_id):
+    if cuenta_id == "inactiva":
+        from app.ventas.modelos import Cuenta
+
+        motor = crear_motor(config_tmp)
+        with Session(motor) as s:
+            s.get(Cuenta, NEQUI).activa = False
+            s.commit()
+        motor.dispose()
+        cuenta_id = NEQUI
+    r = vender(autenticado, [item(vitrina["rosa"])], cuenta_id=cuenta_id)
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Elige la cuenta donde entró el dinero."
+
+
+def test_fecha_futura_da_422(autenticado, vitrina):
+    manana = (hoy_bogota() + timedelta(days=1)).isoformat()
+    r = vender(autenticado, [item(vitrina["rosa"])], fecha=manana)
+    assert r.status_code == 422 and r.json()["detail"] == "La fecha no puede ser futura."
+
+
+def test_venta_de_ayer(autenticado, vitrina, config_tmp):
+    ayer = hoy_bogota() - timedelta(days=1)
+    r = vender(autenticado, [item(vitrina["rosa"])], fecha=ayer.isoformat())
+    assert r.status_code == 201
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        fecha = s.get(Pedido, r.json()["id"]).fecha
+    motor.dispose()
+    assert (fecha.date(), fecha.hour, fecha.minute) == (ayer, 17, 0)
+
+
+def test_canal_invalido_da_mensaje_en_espanol(autenticado, vitrina):
+    r = vender(autenticado, [item(vitrina["rosa"])], canal="radio")
+    assert r.status_code == 422 and r.json()["detail"] == DATO_INVALIDO
