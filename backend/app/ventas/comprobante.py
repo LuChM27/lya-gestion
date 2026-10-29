@@ -1,6 +1,7 @@
 """Comprobante de venta en PDF: se arma en memoria en cada petición y nunca se guarda."""
 
 import io
+import unicodedata
 from datetime import UTC
 from xml.sax.saxutils import escape
 
@@ -42,6 +43,19 @@ ANULADA = ParagraphStyle(
 PIE = ParagraphStyle("pie", parent=TEXTO, fontSize=9, leading=12, textColor=colors.gray)
 
 
+def imprimible(texto: str) -> str:
+    """Helvetica solo dibuja Latin-1: «ő» pasa a «o» y lo que no tiene equivalente (emoji) se quita."""
+    salida = []
+    for letra in texto:
+        try:
+            letra.encode("cp1252")
+            salida.append(letra)
+        except UnicodeEncodeError:
+            base = unicodedata.normalize("NFKD", letra)
+            salida.append("".join(c for c in base if c.isascii() and not unicodedata.combining(c)))
+    return " ".join("".join(salida).split())
+
+
 def pesos(n: int) -> str:
     return "$ " + f"{n:,}".replace(",", ".")
 
@@ -72,7 +86,7 @@ def comprobante_pdf(venta: VentaSalida) -> bytes:
     historia = [
         Paragraph(f"Comprobante de venta N.º {venta.numero}", TITULO),
         Paragraph(f"Fecha: {fecha:%d/%m/%Y}", TEXTO),
-        Paragraph(f"Cliente: {escape(venta.cliente)}", TEXTO),
+        Paragraph(f"Cliente: {escape(imprimible(venta.cliente))}", TEXTO),
         Paragraph(f"Canal: {CANALES.get(venta.canal, venta.canal)}", TEXTO),
         Spacer(1, 0.4 * cm),
     ]
@@ -81,7 +95,7 @@ def comprobante_pdf(venta: VentaSalida) -> bytes:
 
     filas = [["Producto", "Cant.", "Precio", "Subtotal"]] + [
         [
-            Paragraph(escape(f"{i.modelo} · {i.color}"), TEXTO),
+            Paragraph(escape(imprimible(f"{i.modelo} · {i.color}")), TEXTO),
             str(i.cantidad),
             pesos(i.precio_unitario),
             pesos(i.subtotal),
@@ -125,7 +139,7 @@ def comprobante_pdf(venta: VentaSalida) -> bytes:
     if venta.cuenta is not None:
         historia += [
             Spacer(1, 0.3 * cm),
-            Paragraph(f"Pagado con {escape(venta.cuenta.nombre)}", TEXTO),
+            Paragraph(f"Pagado con {escape(imprimible(venta.cuenta.nombre))}", TEXTO),
         ]
     historia += [
         Spacer(1, 1 * cm),
@@ -140,7 +154,8 @@ def comprobante_pdf(venta: VentaSalida) -> bytes:
 @router.get("/pedidos/{pedido_id}/comprobante.pdf")
 def comprobante(pedido_id: int, sesion: SesionDB) -> Response:
     pedido = sesion.get(Pedido, pedido_id)
-    if pedido is None:
+    # Por ahora solo hay comprobante de venta rápida; los encargos tendrán el suyo.
+    if pedido is None or pedido.tipo != "inmediata":
         raise HTTPException(404, "Esa venta no existe.")
     venta = venta_salida(sesion, pedido)
     return Response(
