@@ -54,7 +54,7 @@ def main() -> None:
 
     def copiar_diagnostico(_):
         texto = lanzador.diagnostico(servicio, lanzador.REGISTROS)
-        subprocess.run(["pbcopy"], input=texto, text=True)
+        subprocess.run(["pbcopy"], input=texto, text=True, check=False)
         rumps.alert("Diagnóstico copiado.", "Pégalo en WhatsApp para Luciano.")
 
     app.menu = [
