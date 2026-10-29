@@ -269,3 +269,22 @@ def test_venta_de_ayer_lleva_su_fecha_al_dinero_y_al_stock(autenticado, vitrina,
         venta = select(MovimientoInventario.fecha).where(MovimientoInventario.pedido_id == v["id"])
         assert s.scalars(venta).one() == fecha
     motor.dispose()
+
+
+def test_anulada_conserva_la_cuenta(autenticado, vitrina):
+    v = vender(autenticado, [item(vitrina["rosa"])]).json()
+    anulada = autenticado.post(f"/api/ventas/{v['id']}/anular").json()
+    assert anulada["cuenta"] == {"id": NEQUI, "nombre": "Nequi"}
+    dia = autenticado.get("/api/ventas").json()
+    assert dia["ventas"][0]["cuenta"]["nombre"] == "Nequi"
+
+
+def test_anular_registra_movimiento_de_anulacion(autenticado, vitrina):
+    v = vender(autenticado, [item(vitrina["rosa"])]).json()
+    autenticado.post(f"/api/ventas/{v['id']}/anular")
+    tipos = [
+        m["tipo"]
+        for m in autenticado.get(f"/api/inventario/variantes/{vitrina['rosa']}/movimientos").json()
+    ]
+    assert tipos[:2] == ["anulacion", "venta"]
+    assert "devolucion" not in tipos

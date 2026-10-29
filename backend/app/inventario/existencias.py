@@ -18,6 +18,7 @@ TIPOS = frozenset(
         "ingreso_vitrina",
         "venta",
         "devolucion",
+        "anulacion",
         "cambio",
         "ajuste",
         "merma",

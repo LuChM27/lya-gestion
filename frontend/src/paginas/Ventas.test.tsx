@@ -112,3 +112,17 @@ test("doble toque en Anular envía una sola anulación", async () => {
   expect(await screen.findByText("Anulada")).toBeInTheDocument();
   expect(llamadas.filter((l) => l.clave === "POST /api/ventas/12/anular")).toHaveLength(1);
 });
+
+test("borrar el día vuelve a hoy", async () => {
+  simularApi({
+    [`GET /api/ventas?dia=${hoy}`]: { cuerpo: { dia: hoy, ventas: [VENTA], total: 240000, cantidad: 1 } },
+    "GET /api/ventas?dia=2026-10-28": { cuerpo: { dia: "2026-10-28", ventas: [], total: 0, cantidad: 0 } },
+  });
+  montar("/ventas");
+  await screen.findByText("1 venta · $ 240.000");
+  fireEvent.change(screen.getByLabelText("Día"), { target: { value: "2026-10-28" } });
+  await screen.findByText("No hay ventas este día.");
+  fireEvent.change(screen.getByLabelText("Día"), { target: { value: "" } });
+  expect(await screen.findByText("1 venta · $ 240.000")).toBeInTheDocument();
+  expect(screen.getByLabelText("Día")).toHaveValue(hoy);
+});

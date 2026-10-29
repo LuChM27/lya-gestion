@@ -62,9 +62,7 @@ def venta_salida(sesion: Session, pedido: Pedido) -> VentaSalida:
         )
         for i, v, m in filas
     ]
-    cuenta = sesion.scalar(
-        select(Cuenta).join(Pago, Pago.cuenta_id == Cuenta.id).where(Pago.pedido_id == pedido.id)
-    )
+    cuenta = sesion.get(Cuenta, pedido.cuenta_id) if pedido.cuenta_id else None
     return VentaSalida(
         id=pedido.id,
         numero=numero(pedido.id),
@@ -124,6 +122,7 @@ def registrar_venta(sesion: Session, datos: VentaEntrada) -> Pedido:
         descuento=datos.descuento,
         total=subtotal - datos.descuento,
         nota=datos.nota,
+        cuenta_id=cuenta.id if subtotal > datos.descuento else None,
     )
     sesion.add(pedido)
     sesion.flush()
@@ -231,8 +230,9 @@ def anular_venta(sesion: Session, pedido: Pedido) -> None:
     for item in sesion.scalars(select(PedidoItem).where(PedidoItem.pedido_id == pedido.id)):
         registrar_movimiento(
             sesion,
-            tipo="devolucion",
+            tipo="anulacion",
             cantidad=Decimal(item.cantidad),
+            fecha=ahora_utc(),
             variante_id=item.variante_id,
             pedido_id=pedido.id,
             nota=f"Venta N.º {numero(pedido.id)} anulada",
