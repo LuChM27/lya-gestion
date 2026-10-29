@@ -34,15 +34,15 @@ export default function Confirmar({
     return <BotonSecundario onClick={() => setConfirmando(true)}>{boton}</BotonSecundario>;
   }
   return (
-    <div className="rounded-2xl border border-peligro bg-peligro-fondo p-4">
-      <p className="mb-3 font-semibold">{pregunta}</p>
+    <div className="rounded-[22px] bg-peligro-fondo p-4">
+      <p className="mb-3 text-sm leading-normal font-bold text-tinta">{pregunta}</p>
       <MensajeError texto={error} />
       <div className="flex gap-2">
         <button
           type="button"
           onClick={confirmar}
           disabled={ocupado}
-          className="h-11 rounded-lg bg-peligro px-4 font-bold text-sobre-peligro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peligro disabled:opacity-60"
+          className="h-11 rounded-full bg-peligro px-5 text-[15px] font-extrabold text-sobre-peligro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peligro disabled:opacity-60"
         >
           {accion}
         </button>

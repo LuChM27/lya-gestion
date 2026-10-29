@@ -2,47 +2,75 @@
 @import "@fontsource/nunito/400.css";
 @import "@fontsource/nunito/600.css";
 @import "@fontsource/nunito/700.css";
+@import "@fontsource/nunito/800.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/600-italic.css";
 
-/* Paleta tomada del logo de L&A Tejidos (docs/arquitectura.md). */
+/* Valores copiados de docs/mockups/fuentes/*.html (ver .claude/skills/diseno-lya).
+   Solo modo claro: los mockups no tienen oscuro. */
 @theme {
-  --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
-  --color-rosa: #d9487e;
-  --color-rosa-oscuro: #b8355f;
-  --color-rosa-palo: #e8afcb;
-  --color-menta: #5dbfa3;
-  --color-dorado: #c9a227;
+  --font-sans: "Nunito", system-ui, sans-serif;
+  --font-titulo: "Fraunces", Georgia, serif;
+
+  --color-rosa: #d9487e; /* botón principal, número de paso */
+  --color-rosa-activo: #c23a6e; /* menú activo, «L&A», íconos */
+  --color-rosa-oscuro: #b83467; /* enlaces y botón secundario */
+  --color-rosa-hover: #8e2550;
+  --color-rosa-claro: #fbeaf2; /* menú lateral, chips, pestañas */
+  --color-rosa-palo: #e8afcb; /* borde punteado, borde de botón secundario */
+  --color-rosa-login: #e7acc8; /* panel del inicio de sesión */
+  --color-rosa-burbuja: #e2679a; /* círculo de «Vendiste hoy» */
+  --color-rosa-texto-login: #4e1f35;
   --color-tinta: #1f1a1d;
+  --color-tinta-media: #4a3d44;
+  --color-tinta-detalle: #5e4f57;
+  --color-suave: #6e5f67;
+  --color-flecha: #b9a7b1;
+  --color-apagado: #8a7882;
   --color-fondo: #fff8fb;
   --color-superficie: #ffffff;
-  --color-borde: #ecd9e2;
-  --color-suave: #6b5c63;
-  --color-error: #b3261e;
-  --color-alerta: #8a6100;
-  --color-alerta-fondo: #fdf1c7;
-  --color-peligro: #b3261e;
-  --color-peligro-fondo: #fde2e0;
+  --color-borde: #f6e6ee; /* tarjetas */
+  --color-borde-campo: #f1dce6; /* campos, pastillas, botones redondos */
+  --color-borde-muestra: #e6d3dd;
+  --color-ok: #2e7d67;
+  --color-ok-fondo: #e3f5ef;
+  --color-alerta: #8a6a0a;
+  --color-alerta-fondo: #fbf3dc;
+  --color-peligro: #b42345;
+  --color-peligro-fondo: #fce4ea;
+  --color-lila: #6b5a8c;
+  --color-lila-texto: #5b4a7a;
+  --color-lila-fondo: #efe8f6;
+  --color-dorado: #c9a227;
+  --color-menta: #5dbfa3;
+  --color-error: #b42345;
   --color-sobre-peligro: #ffffff;
+  --color-elegido: #1f1a1d;
+  --color-sobre-elegido: #ffffff;
+
+  --shadow-tarjeta: 0 8px 24px rgba(217, 72, 126, 0.07);
+  --shadow-boton: 0 10px 24px rgba(217, 72, 126, 0.28);
+  --shadow-boton-grande: 0 12px 28px rgba(217, 72, 126, 0.3);
+  --shadow-elegida: 0 8px 20px rgba(217, 72, 126, 0.18);
+  --shadow-menu: 0 6px 18px rgba(217, 72, 126, 0.1);
+  --shadow-pestana: 0 2px 8px rgba(217, 72, 126, 0.12);
+  --shadow-logo: 0 10px 28px rgba(217, 72, 126, 0.18);
+  --shadow-logo-chico: 0 4px 12px rgba(217, 72, 126, 0.18);
+  --shadow-destacada: 0 14px 30px rgba(217, 72, 126, 0.28);
+  --shadow-barra: 0 10px 30px rgba(120, 40, 80, 0.12);
+  --shadow-franja: 0 -10px 30px rgba(120, 40, 80, 0.1);
+  --shadow-mas: 0 10px 24px rgba(217, 72, 126, 0.4);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-tinta: #f6eef2;
-    --color-fondo: #1b1418;
-    --color-superficie: #261d22;
-    --color-borde: #3d2f36;
-    --color-suave: #c4b3bb;
-    --color-rosa-palo: #5a2f43;
-    --color-error: #ff8a80;
-    --color-alerta: #f5cf6b;
-    --color-alerta-fondo: #3d3214;
-    --color-peligro: #ff8a80;
-    --color-peligro-fondo: #4a1f1c;
-    --color-sobre-peligro: #1b1418;
+@layer base {
+  html,
+  body {
+    background: var(--color-fondo);
+    color: var(--color-tinta);
+    color-scheme: light;
   }
-}
 
-html,
-body {
-  background: var(--color-fondo);
-  color: var(--color-tinta);
+  a {
+    color: var(--color-rosa-oscuro);
+  }
 }

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<title>L&amp;A Gestión · Venta rápida</title>
+<script src="ca61c65d-73e2-4bc5-9139-bbd38b3214e0"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<!-- Fuentes: Fraunces 500–700 (normal y cursiva) y Nunito 400–800, incluidas en la app con @fontsource. -->
+<style>
+body{margin:0;background:#FFF8FB}
+a{color:#B83467}a:hover{color:#8E2550}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #FFF8FB; font-family: Nunito, system-ui, sans-serif; color: #1F1A1D; box-sizing: border-box">
+
+  <div style="padding: 16px 20px 0; display: flex; flex-direction: column; gap: 18px">
+    <header style="display: flex; align-items: center; gap: 12px; height: 48px">
+      <a href="InicioCel.dc.html" aria-label="Volver" style="width: 44px; height: 44px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid #F1DCE6; color: #4A3D44; display: flex; align-items: center; justify-content: center; text-decoration: none">
+        <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg>
+      </a>
+      <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 26px">Venta rápida</h1>
+      <span style="margin-left: auto; font-size: 12px; font-weight: 800; color: #B83467; background: #FBEAF2; padding: 5px 10px; border-radius: 999px">3 toques</span>
+    </header>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 800"><span style="color: #D9487E">1.</span> ¿Qué vendiste?</h2>
+        <a href="#" style="font-size: 13px; font-weight: 800; text-decoration: none">Buscar</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{products}}" as="p" hint-placeholder-count="4">
+          <button type="button" aria-pressed="{{p.pressed}}" sc-camel-on-click="{{p.toggle}}" style="position: relative; text-align: left; font-family: inherit; color: #1F1A1D; background: #FFFFFF; border-radius: 20px; padding: 8px 8px 12px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; border: {{p.border}}; box-shadow: {{p.shadow}}">
+            <span style="height: 78px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: {{p.tone}}">
+              <svg aria-hidden="true" width="34" height="34" sc-camel-view-box="0 0 24 24" fill="none" stroke="{{p.ink}}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9h10l1.5 11h-13z"></path><path d="M9 9V7a3 3 0 0 1 6 0v2"></path></svg>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 1px; padding: 0 4px">
+              <span style="font-size: 13px; font-weight: 800; line-height: 1.25">{{p.name}}</span>
+              <span style="font-size: 13px; font-weight: 700; color: #6E5F67">{{p.priceLabel}}</span>
+            </span>
+            <sc-if value="{{p.on}}" hint-placeholder-val="{{false}}">
+              <span aria-hidden="true" style="position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; border-radius: 50%; background: #D9487E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; border: 2px solid #FFFFFF">
+                <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg>
+              </span>
+            </sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 800"><span style="color: #D9487E">2.</span> ¿Por dónde te compró?</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{channels}}" as="c" hint-placeholder-count="4">
+          <button type="button" aria-pressed="{{c.pressed}}" sc-camel-on-click="{{c.pick}}" style="height: 44px; padding: 0 16px; border-radius: 999px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: {{c.weight}}; background: {{c.bg}}; color: {{c.fg}}; border: {{c.border}}">{{c.label}}</button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 800"><span style="color: #D9487E">3.</span> ¿Cómo te pagó?</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{methods}}" as="m" hint-placeholder-count="4">
+          <button type="button" aria-pressed="{{m.pressed}}" sc-camel-on-click="{{m.pick}}" style="height: 44px; padding: 0 16px; border-radius: 999px; font-family: inherit; font-size: 14px; cursor: pointer; font-weight: {{m.weight}}; background: {{m.bg}}; color: {{m.fg}}; border: {{m.border}}">{{m.label}}</button>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+
+  <!-- Total y guardar -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 28px 28px 0 0; box-shadow: 0 -10px 30px rgba(120,40,80,0.10); padding: 16px 20px 22px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 13px; font-weight: 700; color: #6E5F67">{{countLabel}}</span>
+        <span style="font-size: 26px; font-weight: 800; letter-spacing: -0.01em">{{totalLabel}}</span>
+      </div>
+      <a href="#" style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; text-decoration: none; padding: 8px 12px; border-radius: 999px; background: #FBEAF2">
+        <svg aria-hidden="true" width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+        Cliente de mostrador
+      </a>
+    </div>
+    <button type="button" sc-camel-on-click="{{save}}" disabled="{{empty}}" style="height: 56px; border-radius: 999px; border: 0; font-family: inherit; font-size: 17px; font-weight: 800; cursor: pointer; background: {{saveBg}}; color: {{saveFg}}; box-shadow: {{saveShadow}}">{{saveLabel}}</button>
+  </div>
+
+  <!-- Confirmación -->
+  <sc-if value="{{saved}}" hint-placeholder-val="{{false}}">
+    <div role="dialog" aria-label="Venta guardada" style="position: absolute; inset: 0; background: rgba(60,20,40,0.35); display: flex; align-items: flex-end">
+      <div style="width: 100%; background: #FFFFFF; border-radius: 32px 32px 0 0; padding: 28px 24px 26px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; box-sizing: border-box">
+        <span style="width: 72px; height: 72px; border-radius: 50%; background: #E3F5EF; color: #2E7D67; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="36" height="36" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg>
+        </span>
+        <h2 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 26px">¡Venta guardada!</h2>
+        <p style="margin: 0; font-size: 15px; color: #6E5F67; line-height: 1.5">{{savedText}}</p>
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 4px">
+          <button type="button" style="height: 52px; border-radius: 999px; border: 1.5px solid #E8AFCB; background: #FFFFFF; color: #B83467; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer">Ver comprobante PDF</button>
+          <button type="button" sc-camel-on-click="{{reset}}" style="height: 52px; border-radius: 999px; border: 0; background: #D9487E; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer">Otra venta</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picked: { balde: true }, channel: 'ig', method: 'nequi', saved: false };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state;
+    function fmt(n) { return '$ ' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+    var catalog = [
+      { id: 'balde', name: 'Bolso balde con argollas', price: 125000, tone: '#FBEAF2', ink: '#C23A6E' },
+      { id: 'murano', name: 'Mini bolso de murano', price: 98000, tone: '#E3F5EF', ink: '#2E7D67' },
+      { id: 'aurora', name: 'Pulsera de cristal Aurora', price: 28000, tone: '#EFE8F6', ink: '#6B5A8C' },
+      { id: 'gota', name: 'Aretes de murano Gota', price: 35000, tone: '#FBF3DC', ink: '#8A6A0A' }
+    ];
+    var total = 0, count = 0;
+    var products = catalog.map(function (p) {
+      var on = !!st.picked[p.id];
+      if (on) { total += p.price; count += 1; }
+      return {
+        name: p.name, priceLabel: fmt(p.price), tone: p.tone, ink: p.ink, on: on,
+        pressed: on ? 'true' : 'false',
+        border: on ? '2px solid #D9487E' : '2px solid #F6E6EE',
+        shadow: on ? '0 8px 20px rgba(217,72,126,0.18)' : 'none',
+        toggle: function () {
+          var next = Object.assign({}, self.state.picked);
+          next[p.id] = !next[p.id];
+          self.setState({ picked: next });
+        }
+      };
+    });
+    function chip(list, key) {
+      return list.map(function (c) {
+        var on = st[key] === c.id;
+        return {
+          label: c.label, pressed: on ? 'true' : 'false',
+          bg: on ? '#1F1A1D' : '#FFFFFF', fg: on ? '#FFFFFF' : '#4A3D44',
+          border: on ? '1.5px solid #1F1A1D' : '1.5px solid #F1DCE6', weight: on ? '800' : '700',
+          pick: function () { var s = {}; s[key] = c.id; self.setState(s); }
+        };
+      });
+    }
+    var channels = chip([
+      { id: 'ig', label: 'Instagram/TikTok' }, { id: 'wa', label: 'WhatsApp' },
+      { id: 'feria', label: 'Feria' }, { id: 'pres', label: 'Presencial' }
+    ], 'channel');
+    var methods = chip([
+      { id: 'efectivo', label: 'Efectivo' }, { id: 'nequi', label: 'Nequi' },
+      { id: 'davi', label: 'Daviplata' }, { id: 'transf', label: 'Transferencia' }
+    ], 'method');
+    var empty = count === 0;
+    return {
+      products: products, channels: channels, methods: methods,
+      countLabel: empty ? 'Nada elegido aún' : (count === 1 ? '1 producto' : count + ' productos'),
+      totalLabel: fmt(total), empty: empty,
+      saveLabel: empty ? 'Elige un producto' : 'Guardar venta',
+      saveBg: empty ? '#F6E6EE' : '#D9487E', saveFg: empty ? '#8A7882' : '#FFFFFF',
+      saveShadow: empty ? 'none' : '0 12px 28px rgba(217,72,126,0.30)',
+      saved: st.saved,
+      savedText: fmt(total) + ' entraron a tu cuenta y el inventario ya se descontó.',
+      save: function () { if (!empty) self.setState({ saved: true }); },
+      reset: function () { self.setState({ saved: false, picked: {} }); }
+    };
+  }
+}
+</script>
+
+
+</body></html>

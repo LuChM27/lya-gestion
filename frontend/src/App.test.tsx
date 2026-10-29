@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { expect, test } from "vitest";
@@ -60,7 +60,7 @@ test("error de entrada muestra el texto del servidor", async () => {
   expect(usuario).toHaveValue("laura");
 });
 
-test("con sesión la navegación lleva a productos e insumos", async () => {
+test("con sesión el menú lleva al inventario", async () => {
   simularApi({
     "GET /api/auth/estado": { cuerpo: { configurado: true } },
     "GET /api/auth/yo": { cuerpo: { usuario: "laura" } },
@@ -68,14 +68,12 @@ test("con sesión la navegación lleva a productos e insumos", async () => {
     "GET /api/inventario/insumos": { cuerpo: [] },
   });
   montar();
-  expect(await screen.findByText("Hola, laura")).toBeInTheDocument();
-  const productos = screen.getByRole("link", { name: "Productos" });
-  expect(screen.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
-  await userEvent.click(productos);
-  expect(await screen.findByRole("heading", { level: 1, name: "Productos" })).toBeInTheDocument();
-  expect(productos).toHaveAttribute("aria-current", "page");
-  await userEvent.click(screen.getByRole("link", { name: "Insumos" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Insumos" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: "¡Hola de nuevo!" })).toBeInTheDocument();
+  const menu = within(screen.getByRole("navigation", { name: "Menú" }));
+  expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
+  await userEvent.click(menu.getByRole("link", { name: "Inventario" }));
+  expect(await screen.findByRole("heading", { level: 1, name: "Inventario" })).toBeInTheDocument();
+  expect(menu.getByRole("link", { name: "Inventario" })).toHaveAttribute("aria-current", "page");
 });
 
 test("cambiar contraseña no se envía dos veces con doble clic", async () => {

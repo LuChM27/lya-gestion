@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { enviar, ErrorApi } from "../api";
-import { Boton, Campo, MensajeError, Tarjeta } from "../componentes/Formulario";
+import { Boton, Campo, CampoContrasena, MensajeError, Tarjeta } from "../componentes/Formulario";
 import CodigoRecuperacion from "./CodigoRecuperacion";
 
 export default function CrearCuenta() {
@@ -26,13 +26,13 @@ export default function CrearCuenta() {
   }
 
   return (
-    <Tarjeta titulo={codigo ? "Tu código de recuperación" : "Crea tu cuenta"}>
+    <Tarjeta titulo={codigo ? "Tu código de recuperación" : "Crea tu cuenta"} subtitulo={codigo ? undefined : "Así solo tú entras a tus ventas e inventario."}>
       {codigo ? (
         <CodigoRecuperacion codigo={codigo} alContinuar={() => navegar("/", { replace: true })} />
       ) : (
         <form onSubmit={alEnviar} noValidate>
           <Campo etiqueta="Usuario" autoComplete="username" value={usuario} onChange={(e) => { setUsuario(e.target.value); setError(""); }} />
-          <Campo etiqueta="Contraseña" type="password" autoComplete="new-password" minLength={8} value={contrasena} onChange={(e) => { setContrasena(e.target.value); setError(""); }} />
+          <CampoContrasena etiqueta="Contraseña" autoComplete="new-password" minLength={8} value={contrasena} onChange={(e) => { setContrasena(e.target.value); setError(""); }} />
           <p className="-mt-2 mb-4 text-sm text-suave">Al menos 8 caracteres.</p>
           <MensajeError texto={error} />
           <Boton type="submit" disabled={enviando}>Crear cuenta</Boton>

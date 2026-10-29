@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { actualizar, borrar, enviar, ErrorApi, pedir } from "../api";
 import AccionCantidad from "../componentes/AccionCantidad";
 import Archivar from "../componentes/Archivar";
-import Estado from "../componentes/Estado";
+import { Etiqueta } from "../componentes/ui";
 import { Boton, BotonSecundario, Campo, Casilla, MensajeError } from "../componentes/Formulario";
 import FormularioModelo from "../componentes/FormularioModelo";
 import Historial from "../componentes/Historial";
@@ -24,7 +24,7 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
   return (
     <li className={`rounded-2xl border border-borde bg-superficie p-4 ${variante.activo ? "" : "opacity-60"}`}>
       <div className="flex items-center gap-3">
-        {variante.foto && <img src={miniatura(variante.foto)} alt="" className="h-14 w-14 rounded-lg object-cover" />}
+        {variante.foto && <img src={miniatura(variante.foto)} alt="" className="h-14 w-14 rounded-[14px] object-cover" />}
         <div className="min-w-0 flex-1">
           <p className="font-bold">
             {variante.color}
@@ -37,7 +37,7 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
         </div>
         <div className="text-right">
           <p className="font-bold">{unidades(variante.existencia)}</p>
-          <Estado estado={variante.estado} />
+          <Etiqueta estado={variante.estado} />
         </div>
       </div>
       {!variante.activo && (
@@ -153,7 +153,7 @@ function FormularioVariante({
   }
 
   return (
-    <form onSubmit={alEnviar} noValidate className="mb-4 rounded-2xl border border-borde bg-superficie p-4">
+    <form onSubmit={alEnviar} noValidate className="rounded-3xl border border-borde bg-superficie p-4 shadow-tarjeta md:p-[18px]">
       <Campo etiqueta="Color" value={color} onChange={(e) => { setColor(e.target.value); setError(""); }} />
       <Campo etiqueta="Código (opcional)" required={false} maxLength={30} value={sku} onChange={(e) => setSku(e.target.value)} />
       <Casilla etiqueta="Pieza única" checked={piezaUnica} onChange={(e) => setPiezaUnica(e.target.checked)} />
@@ -193,7 +193,7 @@ export default function Modelo() {
 
   return (
     <>
-      <Link to="/productos" className="mb-3 inline-flex h-11 items-center font-semibold text-rosa-oscuro underline">
+      <Link to="/productos" className="inline-flex h-11 items-center gap-2 self-start text-sm font-extrabold text-rosa-oscuro no-underline">
         Volver a productos
       </Link>
       {editando ? (
@@ -206,15 +206,15 @@ export default function Modelo() {
           }}
         />
       ) : (
-        <section className="mb-6 flex flex-wrap items-start gap-4">
-          {modelo.foto && <img src={miniatura(modelo.foto)} alt="" className="h-28 w-28 rounded-2xl object-cover" />}
+        <section className="flex flex-wrap items-start gap-4">
+          {modelo.foto && <img src={miniatura(modelo.foto)} alt="" className="h-28 w-28 rounded-[20px] border-4 border-white object-cover shadow-logo" />}
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold">{modelo.nombre}</h1>
+            <h1 className="font-titulo text-[30px] leading-[1.15] font-semibold tracking-[-0.01em] md:text-[40px] md:leading-[1.1]">{modelo.nombre}</h1>
             <p className="text-suave">
               {categoria} · {pesos(modelo.precio_venta)} · {cantidad(modelo.horas_tejido)} h de tejido
             </p>
             <p className="mt-1 flex items-center gap-2">
-              {unidades(modelo.unidades)} <Estado estado={modelo.estado} />
+              {unidades(modelo.unidades)} <Etiqueta estado={modelo.estado} />
             </p>
             {!modelo.activo && <p className="mt-1 font-semibold text-suave">Archivado</p>}
           </div>
@@ -222,7 +222,7 @@ export default function Modelo() {
         </section>
       )}
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-xl font-bold">Variantes</h2>
+        <h2 className="text-[17px] font-extrabold md:text-[19px]">Variantes</h2>
         {modelo.activo && !agregando && <BotonSecundario onClick={() => setAgregando(true)}>Agregar variante</BotonSecundario>}
       </div>
       {agregando && (
@@ -239,7 +239,7 @@ export default function Modelo() {
       {modelo.variantes.length === 0 && !agregando && (
         <p className="mb-4 text-suave">Agrega un color o una pieza única para llevar sus unidades.</p>
       )}
-      <ul className="mb-8 grid gap-3">
+      <ul className="grid gap-3">
         {modelo.variantes.map((v) => (
           <TarjetaVariante key={v.id} variante={v} alCambiar={cargar} />
         ))}

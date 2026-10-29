@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app import red, salud
+from app import inicio, red, salud
 from app.auth import rutas as rutas_auth
 from app.auth.limitador import Limitador
 from app.config import Config
@@ -38,6 +38,7 @@ def crear_app(config: Config) -> FastAPI:
     app.include_router(fotos.router)
     app.include_router(ventas.router)
     app.include_router(comprobante.router)
+    app.include_router(inicio.router)
 
     @app.exception_handler(ErrorInventario)
     async def error_de_inventario(_: Request, error: ErrorInventario) -> JSONResponse:

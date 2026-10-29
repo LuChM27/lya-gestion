@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { actualizar, borrar, enviar, ErrorApi, pedir } from "../api";
 import AccionCantidad from "../componentes/AccionCantidad";
 import Archivar from "../componentes/Archivar";
-import Estado from "../componentes/Estado";
+import { Etiqueta } from "../componentes/ui";
 import { Boton, BotonSecundario, Campo, Selector } from "../componentes/Formulario";
 import FormularioInsumo from "../componentes/FormularioInsumo";
 import Historial from "../componentes/Historial";
@@ -110,7 +110,7 @@ export default function Insumo() {
 
   return (
     <>
-      <Link to="/insumos" className="mb-3 inline-flex h-11 items-center font-semibold text-rosa-oscuro underline">
+      <Link to="/insumos" className="inline-flex h-11 items-center gap-2 self-start text-sm font-extrabold text-rosa-oscuro no-underline">
         Volver a insumos
       </Link>
       {editando ? (
@@ -123,9 +123,9 @@ export default function Insumo() {
           }}
         />
       ) : (
-        <section className="mb-6 flex flex-wrap items-start gap-4">
+        <section className="flex flex-wrap items-start gap-4">
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold">{insumo.nombre}</h1>
+            <h1 className="font-titulo text-[30px] leading-[1.15] font-semibold tracking-[-0.01em] md:text-[40px] md:leading-[1.1]">{insumo.nombre}</h1>
             <p className="text-suave">
               {tipo}
               {insumo.proveedor && ` · ${insumo.proveedor}`}
@@ -133,7 +133,7 @@ export default function Insumo() {
             </p>
             <p className="mt-1 flex flex-wrap items-center gap-2">
               <span className="font-bold">{`${cantidad(insumo.existencia)} ${insumo.unidad}`}</span>
-              <Estado estado={insumo.estado} />
+              <Etiqueta estado={insumo.estado} />
               <span className="text-sm text-suave">{`mínimo ${cantidad(insumo.stock_minimo)}`}</span>
             </p>
             {insumo.precio_unitario !== null && <p className="text-suave">{`${precio(insumo.precio_unitario)} por unidad`}</p>}
@@ -143,7 +143,7 @@ export default function Insumo() {
         </section>
       )}
       {insumo.activo && accion === null && (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <BotonSecundario onClick={() => setAccion("entrada")}>Registrar entrada</BotonSecundario>
           <BotonSecundario onClick={() => setAccion("merma")}>Registrar merma</BotonSecundario>
           <BotonSecundario onClick={() => setAccion("contar")}>Contar</BotonSecundario>
@@ -151,7 +151,7 @@ export default function Insumo() {
           <BotonSecundario onClick={() => setAccion("precios")}>Ver precios</BotonSecundario>
         </div>
       )}
-      <div className="mb-8">
+      <div>
         {accion === "entrada" && <Entrada insumo={insumo} alGuardar={listo} alCancelar={() => setAccion(null)} />}
         {accion === "merma" && (
           <AccionCantidad

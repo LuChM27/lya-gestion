@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -76,7 +76,7 @@ test("no suma más de lo que hay en vitrina", async () => {
   await userEvent.click(await producto("Negro"));
   await userEvent.click(await producto("Negro"));
   expect(screen.getByText("Solo hay 1 en vitrina.")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /^Guardar venta \$ 125\.000/ })).toBeInTheDocument();
+  expect(within(screen.getByRole("region", { name: "Total" })).getByText("$ 125.000")).toBeInTheDocument();
 });
 
 test("recuerda canal y cuenta del último uso", async () => {
@@ -98,6 +98,7 @@ test("descuento mayor que el subtotal no se envía", async () => {
   const llamadas = api();
   montar();
   await userEvent.click(await producto("Negro"));
+  await userEvent.click(screen.getByRole("button", { name: "Más opciones" }));
   await userEvent.type(screen.getByLabelText("Descuento (opcional)"), "200.000");
   await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
   expect(await screen.findByText("El descuento no puede ser mayor que el subtotal.")).toBeInTheDocument();
@@ -123,6 +124,7 @@ test("fecha de otro día se envía", async () => {
   const llamadas = api();
   montar();
   await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(screen.getByRole("button", { name: "Más opciones" }));
   fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-10-28" } });
   await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
   await screen.findByText("Detalle 12");
@@ -133,6 +135,7 @@ test("buscar filtra por color sin tildes", async () => {
   api();
   montar();
   await producto("Rosa palo");
+  await userEvent.click(screen.getByRole("button", { name: "Buscar" }));
   await userEvent.type(screen.getByLabelText("Buscar"), "rosá");
   expect(screen.queryByRole("button", { name: /^Bolso balde Negro/ })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: /^Bolso balde Rosa palo/ })).toBeInTheDocument();
@@ -166,6 +169,73 @@ test("si alguien vendió lo último, recarga la vitrina y lo saca de la venta", 
   rutas["GET /api/ventas/catalogo"] = { cuerpo: [ROSA] };
   await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
   expect(await screen.findByText("Solo hay 0 de Bolso balde Negro.")).toBeInTheDocument();
-  expect(await screen.findByRole("button", { name: /^Guardar venta \$ 125\.000/ })).toBeInTheDocument();
+  expect(await within(screen.getByRole("region", { name: "Total" })).findByText("$ 125.000")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /^Bolso balde Negro/ })).not.toBeInTheDocument();
+});
+
+test("tres pasos numerados", async () => {
+  api();
+  montar();
+  expect(await screen.findByRole("heading", { level: 2, name: "1. ¿Qué vendiste?" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Venta rápida" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "2. ¿Por dónde te compró?" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "3. ¿Cómo te pagó?" })).toBeInTheDocument();
+  expect(screen.getByText("3 toques")).toBeInTheDocument();
+});
+
+test("la tarjeta elegida muestra la cantidad", async () => {
+  api();
+  montar();
+  await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(await producto("Rosa palo"));
+  const tarjeta = await producto("Rosa palo");
+  expect(tarjeta).toHaveAttribute("aria-pressed", "true");
+  expect(within(tarjeta).getByText("2")).toBeInTheDocument();
+});
+
+test("franja con total y cliente de mostrador", async () => {
+  api();
+  montar();
+  const franja = within(await screen.findByRole("region", { name: "Total" }));
+  expect(franja.getByText("Nada elegido aún")).toBeInTheDocument();
+  expect(franja.getByRole("button", { name: "Elige un producto" })).toBeDisabled();
+  await userEvent.click(await producto("Rosa palo"));
+  expect(franja.getByText("1 producto")).toBeInTheDocument();
+  expect(franja.getByText("$ 125.000")).toBeInTheDocument();
+  expect(franja.getByText("Cliente de mostrador")).toBeInTheDocument();
+  expect(franja.getByRole("button", { name: "Guardar venta" })).toBeEnabled();
+});
+
+test("descuento y fecha están en Más opciones", async () => {
+  api();
+  montar();
+  await producto("Rosa palo");
+  expect(screen.queryByLabelText("Descuento (opcional)")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Fecha")).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Más opciones" }));
+  expect(screen.getByLabelText("Descuento (opcional)")).toBeInTheDocument();
+  expect(screen.getByLabelText("Fecha")).toBeInTheDocument();
+});
+
+test("Volver sin historial lleva a Inicio", async () => {
+  api();
+  render(
+    <MemoryRouter initialEntries={["/vender"]}>
+      <Routes>
+        <Route path="/" element={<p>Pantalla de inicio</p>} />
+        <Route path="/vender" element={<Vender />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await producto("Rosa palo");
+  await userEvent.click(screen.getByRole("button", { name: "Volver" }));
+  expect(await screen.findByText("Pantalla de inicio")).toBeInTheDocument();
+});
+
+test("si la vitrina no carga, igual se puede volver", async () => {
+  api({ "GET /api/ventas/catalogo": { estado: 500, cuerpo: { detail: "No se pudo cargar la vitrina." } } });
+  montar();
+  expect(await screen.findByText("No se pudo cargar la vitrina.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Volver" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Venta rápida" })).toBeInTheDocument();
 });

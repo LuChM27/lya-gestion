@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ErrorApi, pedir } from "../api";
 import { Campo } from "../componentes/Formulario";
+import { IconoSiguiente, IconoSumar, IconoVentas } from "../componentes/iconos";
+import { BotonPrincipal, Encabezado, Vacio } from "../componentes/ui";
 import { hora, pesos } from "../formato";
 import { hoyBogota, nombreCanal, resumenItems, type DiaVentas } from "../ventas";
 
@@ -25,51 +27,49 @@ export default function Ventas() {
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Ventas</h1>
-        <Link
-          to="/vender"
-          className="inline-flex h-11 items-center rounded-lg bg-rosa px-4 font-bold text-white hover:bg-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa"
-        >
-          Nueva venta
-        </Link>
-      </div>
-      <div className="max-w-xs">
+      <Encabezado
+        titulo="Ventas"
+        subtitulo={datos && `${datos.cantidad} ${datos.cantidad === 1 ? "venta" : "ventas"} · ${pesos(datos.total)}`}
+        acciones={
+          <div className="hidden md:block">
+            <BotonPrincipal a="/vender" icono={IconoSumar}>
+              Nueva venta
+            </BotonPrincipal>
+          </div>
+        }
+      />
+      <div className="max-w-[260px]">
         <Campo etiqueta="Día" type="date" max={hoyBogota()} value={dia} onChange={(e) => setDia(e.target.value || hoyBogota())} />
       </div>
-      {error && <p role="alert" className="mb-4 font-semibold text-error">{error}</p>}
-      {datos && (
-        <>
-          <p className="mb-4 text-lg font-bold">
-            {`${datos.cantidad} ${datos.cantidad === 1 ? "venta" : "ventas"} · ${pesos(datos.total)}`}
-          </p>
-          {datos.ventas.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-borde p-8 text-center text-suave">No hay ventas este día.</p>
-          ) : (
-            <ul className="grid gap-3">
-              {datos.ventas.map((v) => {
-                const anulada = v.estado === "cancelado";
-                return (
-                  <li key={v.id}>
-                    <Link
-                      to={`/ventas/${v.id}`}
-                      className="flex items-start justify-between gap-3 rounded-2xl border border-borde bg-superficie p-3 hover:border-rosa focus-visible:outline-2 focus-visible:outline-rosa"
-                    >
-                      <span className="min-w-0">
-                        <span className="block font-semibold">{`N.º ${v.numero} · ${hora(v.fecha)} · ${nombreCanal(v.canal)}`}</span>
-                        <span className={`block text-sm text-suave ${anulada ? "line-through" : ""}`}>{resumenItems(v)}</span>
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className={`block font-bold ${anulada ? "line-through" : ""}`}>{pesos(v.total)}</span>
-                        {anulada && <span className="text-sm font-semibold text-peligro">Anulada</span>}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </>
+      {error && <p role="alert" className="font-bold text-error">{error}</p>}
+      {datos && datos.ventas.length === 0 && <Vacio texto="No hay ventas este día." />}
+      {datos && datos.ventas.length > 0 && (
+        <ul className="flex max-w-[720px] flex-col gap-2.5">
+          {datos.ventas.map((v) => {
+            const anulada = v.estado === "cancelado";
+            return (
+              <li key={v.id}>
+                <Link
+                  to={`/ventas/${v.id}`}
+                  className="flex items-center gap-3 rounded-[18px] border border-borde bg-superficie px-3.5 py-3 text-tinta no-underline hover:border-rosa focus-visible:outline-2 focus-visible:outline-rosa"
+                >
+                  <span aria-hidden className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${anulada ? "bg-peligro-fondo text-peligro" : "bg-rosa-claro text-rosa-activo"}`}>
+                    <IconoVentas tamano={18} />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-px">
+                    <span className="truncate text-sm font-extrabold">{`N.º ${v.numero} · ${hora(v.fecha)} · ${nombreCanal(v.canal)}`}</span>
+                    <span className={`truncate text-xs text-suave ${anulada ? "line-through" : ""}`}>{resumenItems(v)}</span>
+                  </span>
+                  <span className="flex shrink-0 flex-col items-end gap-0.5">
+                    <span className={`text-sm font-extrabold whitespace-nowrap ${anulada ? "text-suave line-through" : ""}`}>{pesos(v.total)}</span>
+                    {anulada && <span className="text-xs font-extrabold text-peligro">Anulada</span>}
+                  </span>
+                  <IconoSiguiente tamano={16} className="shrink-0 text-flecha" />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </>
   );
