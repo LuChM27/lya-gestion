@@ -55,6 +55,8 @@ class Pedido(Base):
     tipo: Mapped[str] = mapped_column(String(20))
     estado: Mapped[str] = mapped_column(String(20))
     cliente_id: Mapped[int] = mapped_column(ForeignKey("cliente.id"))
+    # Se guarda aparte del pago para que una venta anulada siga mostrando dónde se pagó.
+    cuenta_id: Mapped[int | None] = mapped_column(ForeignKey("cuenta.id"))
     descuento: Mapped[int] = mapped_column(Integer, default=0)
     total: Mapped[int] = mapped_column(Integer)
     nota: Mapped[str | None] = mapped_column(String(200))

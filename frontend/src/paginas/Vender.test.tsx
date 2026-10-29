@@ -152,3 +152,20 @@ test("pantalla abierta desde antes de medianoche guarda la venta como de hoy", a
   await screen.findByText("Detalle 12");
   expect(enviado(llamadas)).toMatchObject({ fecha: null });
 });
+
+test("si alguien vendió lo último, recarga la vitrina y lo saca de la venta", async () => {
+  const rutas = {
+    "GET /api/ventas/catalogo": { cuerpo: [ROSA, NEGRO] },
+    "GET /api/cuentas": { cuerpo: CUENTAS },
+    "POST /api/ventas": { estado: 422, cuerpo: { detail: "Solo hay 0 de Bolso balde Negro." } },
+  };
+  simularApi(rutas);
+  montar();
+  await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(await producto("Negro"));
+  rutas["GET /api/ventas/catalogo"] = { cuerpo: [ROSA] };
+  await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
+  expect(await screen.findByText("Solo hay 0 de Bolso balde Negro.")).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: /^Guardar venta \$ 125\.000/ })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Bolso balde Negro/ })).not.toBeInTheDocument();
+});

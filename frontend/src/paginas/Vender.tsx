@@ -97,6 +97,25 @@ export default function Vender() {
     } catch (err) {
       setError(err instanceof ErrorApi ? err.mensaje : String(err));
       setEnviando(false);
+      // Otro dispositivo pudo vender lo último: se trae la vitrina de nuevo y la venta se ajusta a lo que hay.
+      if (err instanceof ErrorApi && err.estado === 422) await recargarVitrina();
+    }
+  }
+
+  async function recargarVitrina() {
+    try {
+      const items = await pedir<CatalogoItem[]>("/api/ventas/catalogo");
+      const existencia = new Map(items.map((i) => [i.variante_id, i.existencia]));
+      setCatalogo(items);
+      setCarrito((actual) =>
+        Object.fromEntries(
+          Object.entries(actual)
+            .map(([id, n]) => [id, Math.min(n, existencia.get(Number(id)) ?? 0)] as const)
+            .filter(([, n]) => n > 0),
+        ),
+      );
+    } catch {
+      // si falla, queda la vitrina anterior y el mensaje del servidor
     }
   }
 

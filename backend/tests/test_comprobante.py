@@ -48,3 +48,31 @@ def test_comprobante_exige_sesion(cliente):
 
 def test_comprobante_inexistente_da_404(autenticado):
     assert autenticado.get("/api/pedidos/999/comprobante.pdf").status_code == 404
+
+
+def test_comprobante_sin_cuadros_por_letras_raras(autenticado):
+    from tests.test_productos import crear_modelo, crear_variante, mover
+
+    m = crear_modelo(autenticado, nombre="Bolso Peonía ✨ ő", precio_venta=90000)
+    var = crear_variante(autenticado, m["id"], color="Rosa palo")
+    mover(autenticado, var["id"], "ingreso_vitrina", 1)
+    v = vender(autenticado, [item(var["id"])]).json()
+    contenido = texto(autenticado.get(v["comprobante"]).content)
+    assert "Bolso Peonía o · Rosa palo" in contenido
+    assert "■" not in contenido and "✨" not in contenido
+
+
+def test_comprobante_solo_de_ventas(autenticado, config_tmp):
+    from sqlalchemy.orm import Session
+
+    from app.db import crear_motor
+    from app.ventas.modelos import Pedido
+
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        p = Pedido(canal="whatsapp", tipo="encargo", estado="apartado", cliente_id=1, total=0)
+        s.add(p)
+        s.commit()
+        pedido_id = p.id
+    motor.dispose()
+    assert autenticado.get(f"/api/pedidos/{pedido_id}/comprobante.pdf").status_code == 404

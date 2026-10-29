@@ -35,7 +35,7 @@ export default function Ventas() {
         </Link>
       </div>
       <div className="max-w-xs">
-        <Campo etiqueta="Día" type="date" max={hoyBogota()} value={dia} onChange={(e) => setDia(e.target.value)} />
+        <Campo etiqueta="Día" type="date" max={hoyBogota()} value={dia} onChange={(e) => setDia(e.target.value || hoyBogota())} />
       </div>
       {error && <p role="alert" className="mb-4 font-semibold text-error">{error}</p>}
       {datos && (

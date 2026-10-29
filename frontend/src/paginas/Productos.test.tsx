@@ -337,3 +337,15 @@ test("stock mínimo de variante con decimales no se envía", async () => {
   expect(await screen.findByText("Los productos se cuentan en unidades enteras.")).toBeInTheDocument();
   expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
 });
+
+test("una venta anulada se ve así en el historial", async () => {
+  simularApi({
+    "GET /api/inventario/modelos/7": { cuerpo: MODELO },
+    "GET /api/inventario/variantes/3/movimientos": {
+      cuerpo: [{ id: 3, fecha: "2026-10-29T16:00:00Z", tipo: "anulacion", cantidad: 1, nota: "Venta N.º 0012 anulada" }],
+    },
+  });
+  montar("/productos/7");
+  await userEvent.click(await screen.findByRole("button", { name: "Ver movimientos" }));
+  expect(await screen.findByText("Venta anulada")).toBeInTheDocument();
+});

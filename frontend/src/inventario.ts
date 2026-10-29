@@ -68,6 +68,7 @@ export const NOMBRE_MOVIMIENTO: Record<string, string> = {
   ingreso_vitrina: "Ingreso a vitrina",
   venta: "Venta",
   devolucion: "Devolución",
+  anulacion: "Venta anulada",
   cambio: "Cambio",
   ajuste: "Ajuste por conteo",
   merma: "Merma",
