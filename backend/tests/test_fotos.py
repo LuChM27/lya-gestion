@@ -1,5 +1,7 @@
 import inspect
 import io
+import os
+import time
 
 from PIL import Image
 
@@ -140,3 +142,19 @@ def test_foto_compartida_no_se_borra(autenticado, config_tmp):
     assert (carpeta / foto).exists()
     autenticado.delete(f"/api/inventario/variantes/{v['id']}")
     assert not (carpeta / foto).exists()
+
+
+def test_fotos_sin_guardar_se_borran_al_dia_siguiente(autenticado, config_tmp):
+    carpeta = config_tmp.data_dir / "fotos"
+    olvidada = subir(autenticado, jpeg(100, 100)).json()["foto"]
+    usada = subir(autenticado, jpeg(110, 100)).json()["foto"]
+    autenticado.post("/api/inventario/modelos", json=MODELO | {"foto": usada})
+    ayer = time.time() - 25 * 3600
+    for nombre in (olvidada, usada):
+        for archivo in (nombre, nombre.replace(".webp", "-300.webp")):
+            os.utime(carpeta / archivo, (ayer, ayer))
+    reciente = subir(autenticado, jpeg(120, 100)).json()["foto"]
+    assert not (carpeta / olvidada).exists()
+    assert not (carpeta / olvidada.replace(".webp", "-300.webp")).exists()
+    assert (carpeta / usada).exists()
+    assert (carpeta / reciente).exists()

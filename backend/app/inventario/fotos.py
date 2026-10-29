@@ -3,6 +3,7 @@
 import hashlib
 import io
 import re
+import time
 import warnings
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import UsuarioActual, usuario_actual
+from app.db import SesionDB
 from app.inventario.existencias import ErrorInventario
 from app.inventario.modelos import Modelo, Variante
 
@@ -26,6 +28,8 @@ FORMATOS = {"JPEG", "PNG", "WEBP"}
 NOMBRE = re.compile(r"^[0-9a-f]{16}(-300)?\.webp$")
 NO_ES_FOTO = "Ese archivo no es una foto."
 PESADA = "La foto pesa más de 15 MB."
+# Una foto subida queda sin dueño hasta que se guarda el formulario: se le da un día.
+PLAZO_SIN_GUARDAR = 24 * 3600
 Image.MAX_IMAGE_PIXELS = 50_000_000
 
 
@@ -95,13 +99,26 @@ def borrar_si_sobra(sesion: Session, data_dir: Path, *fotos: str | None) -> None
             (data_dir / "fotos" / archivo).unlink(missing_ok=True)
 
 
+def borrar_sin_guardar(sesion: Session, data_dir: Path) -> None:
+    """Borra las fotos que se subieron hace más de un día y nunca se guardaron en un producto."""
+    limite = time.time() - PLAZO_SIN_GUARDAR
+    viejas = [
+        f.name
+        for f in carpeta_fotos(data_dir).glob("*.webp")
+        if NOMBRE.match(f.name) and "-" not in f.name and f.stat().st_mtime < limite
+    ]
+    borrar_si_sobra(sesion, data_dir, *viejas)
+
+
 # Sin async: Pillow tarda con fotos grandes y así corre en un hilo aparte sin frenar el resto.
 @router.post("/api/fotos", status_code=201, dependencies=[Depends(usuario_actual)])
-def subir_foto(archivo: UploadFile, request: Request) -> dict[str, str]:
+def subir_foto(archivo: UploadFile, request: Request, sesion: SesionDB) -> dict[str, str]:
     datos = archivo.file.read(MAX_BYTES + 1)
     if len(datos) > MAX_BYTES:
         raise HTTPException(413, PESADA)
-    nombre = guardar_foto(datos, carpeta_fotos(request.app.state.config.data_dir))
+    data_dir = request.app.state.config.data_dir
+    nombre = guardar_foto(datos, carpeta_fotos(data_dir))
+    borrar_sin_guardar(sesion, data_dir)
     return {"foto": nombre, "miniatura": miniatura(nombre)}
 
 
