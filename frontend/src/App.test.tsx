@@ -72,7 +72,7 @@ test("con sesión el menú lleva al inventario", async () => {
   const menu = within(screen.getByRole("navigation", { name: "Menú" }));
   expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
   await userEvent.click(menu.getByRole("link", { name: "Inventario" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Productos" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: "Inventario" })).toBeInTheDocument();
   expect(menu.getByRole("link", { name: "Inventario" })).toHaveAttribute("aria-current", "page");
 });
 

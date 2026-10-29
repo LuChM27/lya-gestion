@@ -59,11 +59,11 @@ export default function SubirFoto({ foto, alSubir }: { foto: string | null; alSu
 
   return (
     <div className="mb-4">
-      <label htmlFor={id} className="mb-1 block text-sm font-semibold">
+      <label htmlFor={id} className="mb-2 block text-sm font-extrabold">
         Foto
       </label>
-      {foto && <img src={miniatura(foto)} alt="Foto del producto" className="mb-2 h-24 w-24 rounded-lg object-cover" />}
-      <input id={id} type="file" accept="image/*" onChange={alElegir} disabled={subiendo} className="block w-full text-sm file:mr-3 file:h-11 file:rounded-lg file:border file:border-borde file:bg-superficie file:px-4 file:font-semibold" />
+      {foto && <img src={miniatura(foto)} alt="Foto del producto" className="mb-2 h-24 w-24 rounded-[14px] object-cover" />}
+      <input id={id} type="file" accept="image/*" onChange={alElegir} disabled={subiendo} className="block w-full text-sm file:mr-3 file:h-11 file:rounded-full file:border-[1.5px] file:border-rosa-palo file:bg-superficie file:px-5 file:font-extrabold file:text-rosa-oscuro" />
       {subiendo && <p className="mt-1 text-sm text-suave">Subiendo foto…</p>}
       {error && (
         <p role="alert" className="mt-1 text-sm font-semibold text-error">

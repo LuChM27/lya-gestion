@@ -42,7 +42,7 @@ export default function FormularioModelo({
   }
 
   return (
-    <form onSubmit={alEnviar} noValidate className="mb-6 rounded-2xl border border-borde bg-superficie p-4">
+    <form onSubmit={alEnviar} noValidate className="rounded-[28px] border border-borde bg-superficie p-5 shadow-tarjeta md:p-[26px]">
       <Campo etiqueta="Nombre" value={nombre} onChange={(e) => { setNombre(e.target.value); setError(""); }} />
       <Selector etiqueta="Categoría" opciones={CATEGORIAS} value={categoria} onChange={(e) => setCategoria(e.target.value)} />
       <Campo etiqueta="Precio de venta" inputMode="numeric" value={precio} onChange={(e) => { setPrecio(e.target.value); setError(""); }} />

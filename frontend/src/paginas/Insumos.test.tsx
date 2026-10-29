@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { expect, test } from "vitest";
@@ -37,7 +37,7 @@ test("lista vacía invita a agregar el primer insumo", async () => {
   simularApi({ "GET /api/inventario/insumos": { cuerpo: [] } });
   montar("/insumos");
   expect(await screen.findByText("Todavía no hay insumos.")).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Agregar el primer insumo" }));
+  await userEvent.click(screen.getByRole("button", { name: "Crear el primer insumo" }));
   expect(screen.getByLabelText("Unidad")).toBeInTheDocument();
 });
 
@@ -49,6 +49,15 @@ test("la lista muestra existencia con su unidad y precio", async () => {
   expect(screen.getByText("$ 30 por unidad")).toBeInTheDocument();
 });
 
+test("insumos en tabla con su estado", async () => {
+  simularApi({ "GET /api/inventario/insumos": { cuerpo: [HILO] } });
+  montar("/insumos");
+  const tabla = within(await screen.findByRole("table"));
+  expect(tabla.getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Insumo", "Existencia", "Precio", "Estado"]);
+  expect(tabla.getByRole("link", { name: "Hilo algodón rosa" })).toHaveAttribute("href", "/insumos/5");
+  expect(tabla.getByText("En stock")).toBeInTheDocument();
+});
+
 test("crear insumo con conos envía la conversión", async () => {
   const llamadas = simularApi({
     "GET /api/inventario/insumos": { cuerpo: [] },
@@ -56,7 +65,7 @@ test("crear insumo con conos envía la conversión", async () => {
     "GET /api/inventario/insumos/5": { cuerpo: HILO },
   });
   montar("/insumos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar insumo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo insumo" }));
   await userEvent.type(screen.getByLabelText("Nombre"), "Hilo algodón rosa");
   await userEvent.type(screen.getByLabelText("Unidad"), "metros");
   await userEvent.click(screen.getByLabelText("Lo compro por paquete, cono o rollo"));
@@ -83,7 +92,7 @@ test("conversión a medias muestra el error del servidor", async () => {
     "POST /api/inventario/insumos": { estado: 422, cuerpo: { detail: "Escribe la unidad de compra y cuánto trae." } },
   });
   montar("/insumos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar insumo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo insumo" }));
   await userEvent.type(screen.getByLabelText("Nombre"), "Hilo");
   await userEvent.type(screen.getByLabelText("Unidad"), "metros");
   await userEvent.click(screen.getByRole("button", { name: "Guardar insumo" }));
@@ -168,7 +177,7 @@ test("lista de insumos archivados", async () => {
 test("precio con más de 2 decimales no se envía", async () => {
   const llamadas = simularApi({ "GET /api/inventario/insumos": { cuerpo: [] } });
   montar("/insumos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar insumo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo insumo" }));
   await userEvent.type(screen.getByLabelText("Nombre"), "Cuentas");
   await userEvent.type(screen.getByLabelText("Unidad"), "unidades");
   await userEvent.type(screen.getByLabelText("Precio por unidad (opcional)"), "27,555");

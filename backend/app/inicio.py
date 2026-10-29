@@ -59,11 +59,17 @@ class Aviso(BaseModel):
     estado: str
 
 
+class PorRevisar(BaseModel):
+    productos: int
+    insumos: int
+
+
 class Inicio(BaseModel):
     ventas_hoy: VentasHoy
     ventas_mes: VentasMes
     vitrina: Vitrina
     avisos: list[Aviso]
+    por_revisar: PorRevisar
 
 
 def _ventas(sesion: Session, desde: date, hasta: date) -> list[Pedido]:
@@ -141,4 +147,8 @@ def inicio(sesion: SesionDB) -> Inicio:
             valor=int(sum((max(stock[v.id], 0) * m.precio_venta for v, m in variantes), start=0)),
         ),
         avisos=avisos[:MAX_AVISOS],
+        por_revisar=PorRevisar(
+            productos=sum(1 for a in avisos if a.tipo == "producto"),
+            insumos=sum(1 for a in avisos if a.tipo == "insumo"),
+        ),
     )

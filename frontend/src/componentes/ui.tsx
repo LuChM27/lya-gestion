@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ComponentType, ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { fechaLarga } from "../formato";
 import { miniatura } from "../inventario";
-import { IconoBolso } from "./iconos";
+import { IconoBolso, IconoBuscar } from "./iconos";
 
 export type EstadoStock = "ok" | "por_agotarse" | "bajo_minimo";
 type Icono = ComponentType<{ tamano?: number; trazo?: number }>;
@@ -144,6 +144,27 @@ export function FotoProducto({ foto, categoria, nombre, className = "h-[150px]",
   return (
     <div className={`relative flex items-center justify-center overflow-hidden ${fondo} ${tinta} ${className}`}>
       {foto ? <img src={miniatura(foto)} alt={nombre} className="absolute inset-0 h-full w-full object-cover" /> : <IconoBolso tamano={icono} trazo={icono > 40 ? 1.2 : 1.4} />}
+    </div>
+  );
+}
+
+/** Buscador en pastilla blanca con lupa (inicio-mac). La etiqueta «Buscar» es solo para lectores de pantalla. */
+export function Buscador({ valor, alCambiar, placeholder }: { valor: string; alCambiar: (v: string) => void; placeholder: string }) {
+  return (
+    <label className="flex h-12 w-full items-center gap-2 rounded-full border-[1.5px] border-borde-campo bg-superficie px-4 text-suave focus-within:border-rosa sm:w-[260px]">
+      <IconoBuscar tamano={18} />
+      <span className="sr-only">Buscar</span>
+      <input type="search" value={valor} onChange={(e) => alCambiar(e.target.value)} placeholder={placeholder} className="w-full border-0 bg-transparent text-[15px] text-tinta outline-none" />
+    </label>
+  );
+}
+
+/** Lista vacía o búsqueda sin resultados: tarjeta punteada con una acción. */
+export function Vacio({ texto, children }: { texto: string; children?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-3xl border-[1.5px] border-dashed border-rosa-palo bg-superficie p-8 text-center">
+      <p className="text-[15px] text-suave">{texto}</p>
+      {children}
     </div>
   );
 }

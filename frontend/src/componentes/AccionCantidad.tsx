@@ -43,7 +43,7 @@ export default function AccionCantidad({
   }
 
   return (
-    <form onSubmit={alEnviar} noValidate className="mt-3 rounded-xl bg-fondo p-3">
+    <form onSubmit={alEnviar} noValidate className="mt-3 rounded-[20px] bg-rosa-claro p-4">
       <Campo etiqueta={etiqueta} inputMode={enteras ? "numeric" : "decimal"} autoFocus value={texto} onChange={(e) => { setTexto(e.target.value); setError(""); }} />
       {children}
       <MensajeError texto={error} />

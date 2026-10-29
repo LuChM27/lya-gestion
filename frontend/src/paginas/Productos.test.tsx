@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, expect, test, vi } from "vitest";
@@ -47,7 +47,7 @@ test("lista vacía invita a agregar el primer modelo", async () => {
   simularApi({ "GET /api/inventario/modelos": { cuerpo: [] } });
   montar("/productos");
   expect(await screen.findByText("Todavía no hay productos.")).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Agregar el primer modelo" }));
+  await userEvent.click(screen.getByRole("button", { name: "Crear el primer modelo" }));
   expect(screen.getByLabelText("Nombre")).toBeInTheDocument();
 });
 
@@ -58,8 +58,34 @@ test("la lista muestra precio, unidades y estado", async () => {
   montar("/productos");
   expect(await screen.findByText("Bolso balde")).toBeInTheDocument();
   expect(screen.getByText("$ 125.000")).toBeInTheDocument();
-  expect(screen.getByText("1 unidad")).toBeInTheDocument();
+  expect(screen.getByText("1 en vitrina")).toBeInTheDocument();
   expect(screen.getByText("Bajo mínimo")).toBeInTheDocument();
+});
+
+test("inventario tiene pestañas de productos e insumos", async () => {
+  simularApi({ "GET /api/inventario/modelos": { cuerpo: [{ ...MODELO, variantes: 1 }] } });
+  montar("/productos");
+  expect(await screen.findByRole("heading", { level: 1, name: "Inventario" })).toBeInTheDocument();
+  const pestanas = within(screen.getByRole("navigation", { name: "Tipo de inventario" }));
+  expect(pestanas.getByRole("link", { name: "Productos en vitrina" })).toHaveAttribute("aria-current", "page");
+  expect(pestanas.getByRole("link", { name: "Insumos" })).toHaveAttribute("href", "/insumos");
+});
+
+test("tarjeta de modelo con estado, categoría y unidades", async () => {
+  simularApi({ "GET /api/inventario/modelos": { cuerpo: [{ ...MODELO, variantes: 3, unidades: 6, estado: "por_agotarse" }] } });
+  montar("/productos");
+  const tarjeta = within(await screen.findByRole("link", { name: /Bolso balde/ }));
+  expect(tarjeta.getByText("Por agotarse")).toBeInTheDocument();
+  expect(tarjeta.getByText("Crochet")).toBeInTheDocument();
+  expect(tarjeta.getByText("3 colores")).toBeInTheDocument();
+  expect(tarjeta.getByText("6 en vitrina")).toBeInTheDocument();
+  expect(tarjeta.getByText("$ 125.000")).toBeInTheDocument();
+});
+
+test("nombre largo se corta en dos líneas", async () => {
+  simularApi({ "GET /api/inventario/modelos": { cuerpo: [{ ...MODELO, variantes: 1, nombre: "Bolso balde con argollas doradas y forro interno" }] } });
+  montar("/productos");
+  expect(await screen.findByRole("heading", { level: 3, name: "Bolso balde con argollas doradas y forro interno" })).toHaveClass("line-clamp-2");
 });
 
 test("búsqueda sin resultados ofrece borrarla", async () => {
@@ -82,7 +108,7 @@ test("crear modelo envía los datos y abre su ficha", async () => {
     "GET /api/inventario/modelos/7": { cuerpo: { ...MODELO, variantes: [] } },
   });
   montar("/productos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo modelo" }));
   await userEvent.type(screen.getByLabelText("Nombre"), "Bolso balde");
   await userEvent.type(screen.getByLabelText("Precio de venta"), "125.000");
   await userEvent.type(screen.getByLabelText("Horas de tejido"), "6,5");
@@ -100,7 +126,7 @@ test("crear modelo envía los datos y abre su ficha", async () => {
 test("número mal escrito no se envía", async () => {
   const llamadas = simularApi({ "GET /api/inventario/modelos": { cuerpo: [] } });
   montar("/productos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo modelo" }));
   await userEvent.type(screen.getByLabelText("Nombre"), "Bolso");
   await userEvent.type(screen.getByLabelText("Precio de venta"), "mucho");
   await userEvent.click(screen.getByRole("button", { name: "Guardar modelo" }));
@@ -206,7 +232,7 @@ test("foto que no se puede leer muestra el error", async () => {
   vi.stubGlobal("createImageBitmap", vi.fn().mockRejectedValue(new Error("HEIC")));
   simularApi({ "GET /api/inventario/modelos": { cuerpo: [] } });
   montar("/productos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo modelo" }));
   const archivo = new File(["x"], "foto.heic", { type: "image/heic" });
   await userEvent.upload(screen.getByLabelText("Foto"), archivo);
   expect(
@@ -222,7 +248,7 @@ test("foto JPEG sube tal cual para que el servidor la enderece", async () => {
     "POST /api/fotos": { estado: 201, cuerpo: { foto: "0123456789abcdef.webp", miniatura: "0123456789abcdef-300.webp" } },
   });
   montar("/productos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo modelo" }));
   const original = new File(["jpeg"], "a.jpg", { type: "image/jpeg" });
   await userEvent.upload(screen.getByLabelText("Foto"), original);
   await screen.findByRole("img", { name: "Foto del producto" });
@@ -304,7 +330,7 @@ test("foto se reduce en el navegador y se sube", async () => {
     "POST /api/fotos": { estado: 201, cuerpo: { foto: "0123456789abcdef.webp", miniatura: "0123456789abcdef-300.webp" } },
   });
   montar("/productos");
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar modelo" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Nuevo modelo" }));
   await userEvent.upload(screen.getByLabelText("Foto"), new File(["x"], "a.heic", { type: "image/heic" }));
   expect(await screen.findByRole("img", { name: "Foto del producto" })).toHaveAttribute(
     "src",

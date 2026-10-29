@@ -82,7 +82,7 @@ export default function FormularioInsumo({
 
   const nombreUnidad = unidad.trim() || "unidades";
   return (
-    <form onSubmit={alEnviar} noValidate className="mb-6 rounded-2xl border border-borde bg-superficie p-4">
+    <form onSubmit={alEnviar} noValidate className="rounded-[28px] border border-borde bg-superficie p-5 shadow-tarjeta md:p-[26px]">
       <Campo etiqueta="Nombre" value={nombre} onChange={(e) => { setNombre(e.target.value); limpiar(); }} />
       <Selector etiqueta="Tipo" opciones={TIPOS_INSUMO} value={tipo} onChange={(e) => setTipo(e.target.value)} />
       <Campo etiqueta="Unidad" placeholder="metros, gramos, unidades…" maxLength={20} value={unidad} onChange={(e) => { setUnidad(e.target.value); limpiar(); }} />

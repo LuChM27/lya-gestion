@@ -16,6 +16,7 @@ def test_inicio_sin_datos(autenticado):
     assert datos["ventas_mes"] == {"total": 0, "cantidad": 0, "mes": MESES[hoy_bogota().month - 1]}
     assert datos["vitrina"] == {"piezas": 0, "valor": 0}
     assert datos["avisos"] == []
+    assert datos["por_revisar"] == {"productos": 0, "insumos": 0}
 
 
 def test_inicio_cuenta_ventas_vitrina_y_avisos(autenticado, vitrina):  # noqa: F811
@@ -46,7 +47,9 @@ def test_avisos_de_productos_primero_los_rojos(autenticado, vitrina):  # noqa: F
         f"/api/inventario/variantes/{vitrina['rosa']}",
         json={"color": "Rosa palo", "stock_minimo": 3},
     )
-    avisos = autenticado.get("/api/inicio").json()["avisos"]
+    datos = autenticado.get("/api/inicio").json()
+    assert datos["por_revisar"] == {"productos": 2, "insumos": 0}
+    avisos = datos["avisos"]
     assert [(a["nombre"], a["estado"], a["detalle"]) for a in avisos] == [
         ("Bolso balde · Negro", "bajo_minimo", "Quedan 1 · mínimo 2"),
         ("Bolso balde · Rosa palo", "por_agotarse", "Quedan 3 · mínimo 3"),
