@@ -1,19 +1,21 @@
 import { useState, type FormEvent } from "react";
 import { ErrorApi } from "../api";
 import { decimales, leerNumero } from "../formato";
-import { NUMERO_INVALIDO } from "../inventario";
+import { ENTERAS, NUMERO_INVALIDO } from "../inventario";
 import { Boton, BotonSecundario, Campo, MensajeError } from "./Formulario";
 
 /** Formulario corto en la misma tarjeta: una cantidad y Guardar/Cancelar. */
 export default function AccionCantidad({
   etiqueta,
   permitirCero = false,
+  enteras = false,
   children,
   alGuardar,
   alCancelar,
 }: {
   etiqueta: string;
   permitirCero?: boolean;
+  enteras?: boolean;
   children?: React.ReactNode;
   alGuardar: (cantidad: number) => Promise<void>;
   alCancelar: () => void;
@@ -28,6 +30,7 @@ export default function AccionCantidad({
     const n = leerNumero(texto);
     if (n === null || n < 0) return setError(NUMERO_INVALIDO);
     if (n === 0 && !permitirCero) return setError("Escribe una cantidad mayor que 0.");
+    if (enteras && !Number.isInteger(n)) return setError(ENTERAS);
     if (decimales(n) > 3) return setError("Usa máximo 3 decimales.");
     setEnviando(true);
     try {
@@ -41,7 +44,7 @@ export default function AccionCantidad({
 
   return (
     <form onSubmit={alEnviar} noValidate className="mt-3 rounded-xl bg-fondo p-3">
-      <Campo etiqueta={etiqueta} inputMode="decimal" autoFocus value={texto} onChange={(e) => { setTexto(e.target.value); setError(""); }} />
+      <Campo etiqueta={etiqueta} inputMode={enteras ? "numeric" : "decimal"} autoFocus value={texto} onChange={(e) => { setTexto(e.target.value); setError(""); }} />
       {children}
       <MensajeError texto={error} />
       <div className="flex gap-2">

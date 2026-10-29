@@ -9,7 +9,7 @@ import FormularioModelo from "../componentes/FormularioModelo";
 import Historial from "../componentes/Historial";
 import SubirFoto from "../componentes/SubirFoto";
 import { cantidad, leerNumero, pesos, unidades } from "../formato";
-import { CATEGORIAS, miniatura, NUMERO_INVALIDO, type ModeloDetalle, type Variante } from "../inventario";
+import { CATEGORIAS, ENTERAS, miniatura, NUMERO_INVALIDO, type ModeloDetalle, type Variante } from "../inventario";
 
 type Accion = "vitrina" | "merma" | "contar" | "historial" | "editar" | null;
 
@@ -76,6 +76,7 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
       {(accion === "vitrina" || accion === "merma") && (
         <AccionCantidad
           etiqueta="Cantidad"
+          enteras
           alCancelar={() => setAccion(null)}
           alGuardar={async (n) => {
             await enviar(`${ruta}/movimientos`, { tipo: accion === "vitrina" ? "ingreso_vitrina" : "merma", cantidad: n });
@@ -87,6 +88,7 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
         <AccionCantidad
           etiqueta="Cantidad contada"
           permitirCero
+          enteras
           alCancelar={() => setAccion(null)}
           alGuardar={async (n) => {
             await enviar(`${ruta}/conteo`, { cantidad_contada: n });
@@ -131,6 +133,7 @@ function FormularioVariante({
     if (!color.trim()) return setError("Escribe el color o la combinación de colores.");
     const stockMinimo = minimo.trim() ? leerNumero(minimo) : 0;
     if (stockMinimo === null || stockMinimo < 0) return setError(NUMERO_INVALIDO);
+    if (!Number.isInteger(stockMinimo)) return setError(ENTERAS);
     setEnviando(true);
     try {
       const datos = {
@@ -155,7 +158,7 @@ function FormularioVariante({
       <Campo etiqueta="Código (opcional)" required={false} maxLength={30} value={sku} onChange={(e) => setSku(e.target.value)} />
       <Casilla etiqueta="Pieza única" checked={piezaUnica} onChange={(e) => setPiezaUnica(e.target.checked)} />
       {!piezaUnica && (
-        <Campo etiqueta="Stock mínimo" inputMode="decimal" required={false} value={minimo} onChange={(e) => { setMinimo(e.target.value); setError(""); }} />
+        <Campo etiqueta="Stock mínimo" inputMode="numeric" required={false} value={minimo} onChange={(e) => { setMinimo(e.target.value); setError(""); }} />
       )}
       <SubirFoto foto={foto} alSubir={setFoto} />
       <MensajeError texto={error} />

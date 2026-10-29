@@ -9,9 +9,12 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
+from sqlalchemy import exists, or_, select
+from sqlalchemy.orm import Session
 
 from app.auth.dependencias import UsuarioActual, usuario_actual
 from app.inventario.existencias import ErrorInventario
+from app.inventario.modelos import Modelo, Variante
 
 router = APIRouter()
 
@@ -82,9 +85,20 @@ def foto_existe(data_dir: Path, nombre: str | None) -> bool:
     )
 
 
+def borrar_si_sobra(sesion: Session, data_dir: Path, *fotos: str | None) -> None:
+    """Borra del disco las fotos que ya no usa ningún modelo ni variante, archivados incluidos."""
+    for nombre in {f for f in fotos if f and NOMBRE.match(f)}:
+        usada = exists().where(Modelo.foto == nombre)
+        if sesion.scalar(select(or_(usada, exists().where(Variante.foto == nombre)))):
+            continue
+        for archivo in (nombre, miniatura(nombre)):
+            (data_dir / "fotos" / archivo).unlink(missing_ok=True)
+
+
+# Sin async: Pillow tarda con fotos grandes y así corre en un hilo aparte sin frenar el resto.
 @router.post("/api/fotos", status_code=201, dependencies=[Depends(usuario_actual)])
-async def subir_foto(archivo: UploadFile, request: Request) -> dict[str, str]:
-    datos = await archivo.read(MAX_BYTES + 1)
+def subir_foto(archivo: UploadFile, request: Request) -> dict[str, str]:
+    datos = archivo.file.read(MAX_BYTES + 1)
     if len(datos) > MAX_BYTES:
         raise HTTPException(413, PESADA)
     nombre = guardar_foto(datos, carpeta_fotos(request.app.state.config.data_dir))

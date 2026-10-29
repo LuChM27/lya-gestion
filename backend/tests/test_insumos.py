@@ -87,7 +87,7 @@ def test_merma_de_insumo_mayor_que_existencia_da_422(autenticado, insumo):
         f"/api/inventario/insumos/{insumo['id']}/movimientos",
         json={"tipo": "merma", "cantidad": 11},
     )
-    assert r.status_code == 422 and r.json()["detail"] == "Solo hay 10."
+    assert r.status_code == 422 and r.json()["detail"] == "Solo hay 10 metros."
 
 
 def test_merma_y_conteo(autenticado, insumo):
@@ -148,3 +148,12 @@ def test_nombre_de_insumo_archivado_lo_dice(autenticado, insumo):
     assert r.json()["detail"] == (
         "Ya existe el insumo Hilo algodón rosa, archivado. Búscalo en Archivados y vuelve a usarlo."
     )
+
+
+def test_merma_de_insumo_dice_la_unidad(autenticado, insumo):
+    entrada(autenticado, insumo["id"], cantidad=2.5)
+    r = autenticado.post(
+        f"/api/inventario/insumos/{insumo['id']}/movimientos", json={"tipo": "merma", "cantidad": 3}
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == f"Solo hay 2,5 {insumo['unidad']}."

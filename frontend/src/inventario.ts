@@ -73,6 +73,7 @@ export const NOMBRE_MOVIMIENTO: Record<string, string> = {
   merma: "Merma",
 };
 
+export const ENTERAS = "Los productos se cuentan en unidades enteras.";
 export const NUMERO_INVALIDO = "Escribe un número, por ejemplo 12,5.";
 
 export const miniatura = (foto: string) => `/fotos/${foto.replace(".webp", "-300.webp")}`;

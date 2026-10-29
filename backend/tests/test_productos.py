@@ -187,9 +187,10 @@ def test_lista_pone_primero_lo_bajo_minimo(autenticado):
     assert [x["estado"] for x in r] == ["bajo_minimo", "por_agotarse", "ok"]
 
 
-def test_cantidades_decimales_y_numeros_json(autenticado, variante):
-    r = mover(autenticado, variante["id"], "ingreso_vitrina", 1.5)
-    assert r.json()["existencia"] == 1.5
+def test_cantidades_son_numeros_json(autenticado, variante):
+    r = mover(autenticado, variante["id"], "ingreso_vitrina", 3)
+    assert r.json()["existencia"] == 3
+    assert isinstance(r.json()["existencia"], (int, float))
     assert isinstance(r.json()["stock_minimo"], (int, float))
 
 
@@ -229,3 +230,39 @@ def test_dato_invalido_da_mensaje_en_espanol(autenticado, variante):
     r = mover(autenticado, variante["id"], "ingreso_vitrina", 0)
     assert r.status_code == 422
     assert r.json()["detail"] == "Revisa los datos: hay un valor que no es válido."
+
+
+@pytest.mark.parametrize(
+    ("ruta", "cuerpo"),
+    [
+        ("movimientos", {"tipo": "ingreso_vitrina", "cantidad": 1.5}),
+        ("conteo", {"cantidad_contada": 2.5}),
+    ],
+)
+def test_productos_se_cuentan_en_unidades_enteras(autenticado, variante, ruta, cuerpo):
+    r = autenticado.post(f"/api/inventario/variantes/{variante['id']}/{ruta}", json=cuerpo)
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Los productos se cuentan en unidades enteras."
+
+
+def test_minimo_de_variante_en_unidades_enteras(autenticado, modelo):
+    r = autenticado.post(
+        f"/api/inventario/modelos/{modelo['id']}/variantes",
+        json={"color": "Azul", "stock_minimo": 1.5},
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Los productos se cuentan en unidades enteras."
+
+
+def test_color_y_codigo_repetidos_sin_importar_mayusculas(autenticado, modelo):
+    crear_variante(autenticado, modelo["id"], color="Azul petróleo", sku="LA-AZ")
+    r = autenticado.post(
+        f"/api/inventario/modelos/{modelo['id']}/variantes", json={"color": "azul PETRÓLEO"}
+    )
+    assert r.status_code == 409
+    otro = crear_modelo(autenticado, nombre="Cartera")
+    r = autenticado.post(
+        f"/api/inventario/modelos/{otro['id']}/variantes", json={"color": "Azul", "sku": "la-az"}
+    )
+    assert r.status_code == 409
+    assert r.json()["detail"] == "El código la-az ya está en uso."

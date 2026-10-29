@@ -197,3 +197,44 @@ test("precio con más de 2 decimales no se envía", async () => {
   expect(await screen.findByText("Usa máximo 2 decimales en los precios.")).toBeInTheDocument();
   expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
 });
+
+test("editar insumo sin tocar el precio no reenvía el precio", async () => {
+  const llamadas = simularApi({
+    "GET /api/inventario/insumos/5": { cuerpo: HILO },
+    "PUT /api/inventario/insumos/5": { cuerpo: { ...HILO, proveedor: "Hilos del Valle" } },
+  });
+  montar("/insumos/5");
+  await userEvent.click(await screen.findByRole("button", { name: "Editar insumo" }));
+  await userEvent.type(screen.getByLabelText("Proveedor (opcional)"), "Hilos del Valle");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar insumo" }));
+  await screen.findByRole("button", { name: "Editar insumo" });
+  expect(llamadas.find((l) => l.clave === "PUT /api/inventario/insumos/5")?.cuerpo).toMatchObject({
+    proveedor: "Hilos del Valle",
+    precio_unitario: null,
+  });
+});
+
+test("editar el precio del insumo sí lo envía", async () => {
+  const llamadas = simularApi({
+    "GET /api/inventario/insumos/5": { cuerpo: HILO },
+    "PUT /api/inventario/insumos/5": { cuerpo: { ...HILO, precio_unitario: 35 } },
+  });
+  montar("/insumos/5");
+  await userEvent.click(await screen.findByRole("button", { name: "Editar insumo" }));
+  const precio = screen.getByLabelText("Precio por unidad (opcional)");
+  await userEvent.clear(precio);
+  await userEvent.type(precio, "35");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar insumo" }));
+  await screen.findByRole("button", { name: "Editar insumo" });
+  expect(llamadas.find((l) => l.clave === "PUT /api/inventario/insumos/5")?.cuerpo).toMatchObject({ precio_unitario: 35 });
+});
+
+test("merma de insumo con más de 3 decimales no se envía", async () => {
+  const llamadas = simularApi({ "GET /api/inventario/insumos/5": { cuerpo: HILO } });
+  montar("/insumos/5");
+  await userEvent.click(await screen.findByRole("button", { name: "Registrar merma" }));
+  await userEvent.type(screen.getByLabelText("Cantidad"), "0,1234");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+  expect(await screen.findByText("Usa máximo 3 decimales.")).toBeInTheDocument();
+  expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
+});

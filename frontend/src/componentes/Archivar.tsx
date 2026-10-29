@@ -26,7 +26,7 @@ export default function Archivar({ boton, nombre, alArchivar }: { boton: string;
         <button
           type="button"
           onClick={archivar}
-          className="h-11 rounded-lg bg-peligro px-4 font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peligro"
+          className="h-11 rounded-lg bg-peligro px-4 font-bold text-sobre-peligro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peligro"
         >
           Archivar
         </button>

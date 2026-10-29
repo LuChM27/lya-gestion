@@ -281,7 +281,7 @@ test("archivar variante pide confirmación", async () => {
 
 test.each([
   ["0", "Escribe una cantidad mayor que 0."],
-  ["0,1234", "Usa máximo 3 decimales."],
+  ["0,5", "Los productos se cuentan en unidades enteras."],
 ])("merma de %s no se envía", async (texto, mensaje) => {
   const llamadas = simularApi({ "GET /api/inventario/modelos/7": { cuerpo: MODELO } });
   montar("/productos/7");
@@ -312,4 +312,28 @@ test("foto se reduce en el navegador y se sube", async () => {
   );
   expect(dibujar).toHaveBeenCalledWith(expect.anything(), 0, 0, 1600, 1200);
   expect(llamadas.find((l) => l.clave === "POST /api/fotos")?.cuerpo).toBeInstanceOf(FormData);
+});
+
+test.each([
+  ["Sumar a vitrina", "Cantidad"],
+  ["Contar", "Cantidad contada"],
+])("%s con decimales no se envía", async (boton, campo) => {
+  const llamadas = simularApi({ "GET /api/inventario/modelos/7": { cuerpo: MODELO } });
+  montar("/productos/7");
+  await userEvent.click(await screen.findByRole("button", { name: boton }));
+  await userEvent.type(screen.getByLabelText(campo), "1,5");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+  expect(await screen.findByText("Los productos se cuentan en unidades enteras.")).toBeInTheDocument();
+  expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
+});
+
+test("stock mínimo de variante con decimales no se envía", async () => {
+  const llamadas = simularApi({ "GET /api/inventario/modelos/7": { cuerpo: MODELO } });
+  montar("/productos/7");
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar variante" }));
+  await userEvent.type(screen.getByLabelText("Color"), "Negro");
+  await userEvent.type(screen.getByLabelText("Stock mínimo"), "1,5");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar variante" }));
+  expect(await screen.findByText("Los productos se cuentan en unidades enteras.")).toBeInTheDocument();
+  expect(llamadas.some((l) => l.clave.startsWith("POST"))).toBe(false);
 });

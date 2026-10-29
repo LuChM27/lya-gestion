@@ -34,7 +34,8 @@ export default function FormularioInsumo({
   const [factor, setFactor] = useState(texto(inicial?.factor_compra));
   const [minimo, setMinimo] = useState(texto(inicial?.stock_minimo));
   const [proveedor, setProveedor] = useState(inicial?.proveedor ?? "");
-  const [precio, setPrecio] = useState(texto(inicial?.precio_unitario));
+  const precioInicial = texto(inicial?.precio_unitario);
+  const [precio, setPrecio] = useState(precioInicial);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
   const limpiar = () => setError("");
@@ -69,7 +70,8 @@ export default function FormularioInsumo({
         factor_compra: factorCompra,
         stock_minimo: stockMinimo,
         proveedor: proveedor.trim() || null,
-        precio_unitario: precioUnitario,
+        // Sin cambios no se reenvía: otra compra pudo cambiar el precio vigente mientras tanto.
+        precio_unitario: precio === precioInicial ? null : precioUnitario,
       });
     } catch (err) {
       setError(err instanceof ErrorApi ? err.mensaje : String(err));

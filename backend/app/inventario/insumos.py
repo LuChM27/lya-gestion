@@ -206,7 +206,12 @@ def entrada_insumo(insumo_id: int, datos: EntradaInsumo, sesion: SesionDB) -> In
 def merma_insumo(insumo_id: int, datos: MermaInsumo, sesion: SesionDB) -> InsumoSalida:
     insumo = _insumo(sesion, insumo_id)
     registrar_movimiento(
-        sesion, tipo="merma", cantidad=-datos.cantidad, insumo_id=insumo.id, nota=datos.nota
+        sesion,
+        tipo="merma",
+        cantidad=-datos.cantidad,
+        insumo_id=insumo.id,
+        nota=datos.nota,
+        unidad=insumo.unidad,
     )
     sesion.commit()
     return _salida(sesion, insumo)

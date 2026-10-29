@@ -101,16 +101,13 @@ def registrar_movimiento(
     costo_unitario: Decimal | None = None,
     nota: str | None = None,
     permitir_negativo: bool = False,
+    unidad: str | None = None,
 ) -> MovimientoInventario:
     if tipo not in TIPOS:
         raise ValueError(f"Tipo de movimiento desconocido: {tipo}")
     cantidad = _redondear(cantidad)
     if cantidad == 0:
         raise ErrorInventario("La cantidad no puede ser 0.")
-    if cantidad < 0 and not permitir_negativo:
-        actual = existencia(sesion, variante_id=variante_id, insumo_id=insumo_id)
-        if actual + cantidad < 0:
-            raise ErrorInventario(f"Solo hay {cantidad_texto(actual)}.")
     movimiento = MovimientoInventario(
         tipo=tipo,
         cantidad=cantidad,
@@ -121,6 +118,15 @@ def registrar_movimiento(
     )
     sesion.add(movimiento)
     sesion.flush()
+    if cantidad < 0 and not permitir_negativo:
+        # Se revisa después de escribir: SQLite ya dio el bloqueo de escritura a esta
+        # sesión, así que otra merma simultánea espera y luego ve esta.
+        despues = existencia(sesion, variante_id=variante_id, insumo_id=insumo_id)
+        if despues < 0:
+            sesion.delete(movimiento)
+            sesion.flush()
+            antes = cantidad_texto(despues - cantidad)
+            raise ErrorInventario(f"Solo hay {antes} {unidad}." if unidad else f"Solo hay {antes}.")
     return movimiento
 
 

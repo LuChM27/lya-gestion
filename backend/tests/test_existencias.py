@@ -1,3 +1,4 @@
+import threading
 from decimal import Decimal
 
 import pytest
@@ -130,3 +131,37 @@ def test_tipo_desconocido_falla(s, insumo):
 )
 def test_cantidad_texto(d, texto):
     assert cantidad_texto(d) == texto
+
+
+def test_dos_mermas_a_la_vez_no_dejan_negativo(config_tmp):
+    # Dos dispositivos registran merma del mismo insumo casi al mismo tiempo.
+    migrar(config_tmp)
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        i = Insumo(nombre="Hilo", tipo="hilo", unidad="metros")
+        s.add(i)
+        s.flush()
+        insumo_id = i.id
+        registrar_movimiento(s, tipo="compra", cantidad=Decimal(5), insumo_id=insumo_id)
+        s.commit()
+    errores: list[Exception] = []
+
+    def segundo():
+        with Session(motor) as s2:
+            try:
+                registrar_movimiento(s2, tipo="merma", cantidad=Decimal(-5), insumo_id=insumo_id)
+                s2.commit()
+            except ErrorInventario as error:
+                errores.append(error)
+
+    with Session(motor) as s1:
+        registrar_movimiento(s1, tipo="merma", cantidad=Decimal(-5), insumo_id=insumo_id)
+        hilo = threading.Thread(target=segundo)
+        hilo.start()
+        hilo.join(0.5)  # el segundo queda esperando o ya revisó la existencia
+        s1.commit()
+    hilo.join()
+    with Session(motor) as s:
+        assert existencia(s, insumo_id=insumo_id) == 0
+    assert len(errores) == 1
+    motor.dispose()

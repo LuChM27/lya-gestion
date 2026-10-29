@@ -1,3 +1,4 @@
+import inspect
 import io
 
 from PIL import Image
@@ -107,3 +108,35 @@ def test_modelo_con_foto_subida(autenticado):
         json={"color": "Negro", "foto": "fedcba9876543210.webp"},
     )
     assert r.status_code == 422 and r.json()["detail"] == "Vuelve a subir la foto."
+
+
+def test_subir_foto_no_bloquea_el_servidor():
+    # Pillow trabaja varios segundos con fotos grandes: la ruta corre en un hilo aparte.
+    from app.inventario.fotos import subir_foto
+
+    assert not inspect.iscoroutinefunction(subir_foto)
+
+
+def test_foto_reemplazada_se_borra_si_nadie_la_usa(autenticado, config_tmp):
+    carpeta = config_tmp.data_dir / "fotos"
+    vieja = subir(autenticado, jpeg(100, 100)).json()["foto"]
+    nueva = subir(autenticado, jpeg(120, 100)).json()["foto"]
+    m = autenticado.post("/api/inventario/modelos", json=MODELO | {"foto": vieja}).json()
+    r = autenticado.put(f"/api/inventario/modelos/{m['id']}", json=MODELO | {"foto": nueva})
+    assert r.status_code == 200
+    assert not (carpeta / vieja).exists()
+    assert not (carpeta / vieja.replace(".webp", "-300.webp")).exists()
+    assert (carpeta / nueva).exists()
+
+
+def test_foto_compartida_no_se_borra(autenticado, config_tmp):
+    carpeta = config_tmp.data_dir / "fotos"
+    foto = subir(autenticado, jpeg(100, 100)).json()["foto"]
+    m = autenticado.post("/api/inventario/modelos", json=MODELO | {"foto": foto}).json()
+    v = autenticado.post(
+        f"/api/inventario/modelos/{m['id']}/variantes", json={"color": "Negro", "foto": foto}
+    ).json()
+    autenticado.put(f"/api/inventario/modelos/{m['id']}", json=MODELO | {"foto": None})
+    assert (carpeta / foto).exists()
+    autenticado.delete(f"/api/inventario/variantes/{v['id']}")
+    assert not (carpeta / foto).exists()

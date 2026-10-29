@@ -4,7 +4,7 @@ import unicodedata
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlalchemy import delete, exists, select, true, update
+from sqlalchemy import delete, exists, func, select, true, update
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
@@ -27,13 +27,23 @@ from app.inventario.existencias import (
     existencias,
     registrar_movimiento,
 )
-from app.inventario.fotos import foto_existe
+from app.inventario.fotos import borrar_si_sobra, foto_existe
 from app.inventario.modelos import Modelo, MovimientoInventario, Variante
 
 router = APIRouter(prefix="/api/inventario", dependencies=[Depends(usuario_actual)])
 
 GRAVEDAD = {"bajo_minimo": 0, "por_agotarse": 1, "ok": 2}
 PIEZA_UNICA = "Una pieza única solo puede tener 1 unidad."
+ENTERAS = "Los productos se cuentan en unidades enteras."
+
+
+def _entera(cantidad: Decimal) -> None:
+    if cantidad != cantidad.to_integral_value():
+        raise ErrorInventario(ENTERAS)
+
+
+def _limpiar_fotos(sesion: Session, request: Request, *fotos: str | None) -> None:
+    borrar_si_sobra(sesion, request.app.state.config.data_dir, *fotos)
 
 
 def _revisar_foto(request: Request, foto: str | None) -> None:
@@ -119,10 +129,23 @@ def _tiene_movimientos(sesion: Session, *condiciones) -> bool:
     return bool(sesion.scalar(select(exists().where(*condiciones))))
 
 
+def _sku_usado(sesion: Session, sku: str, otra=None) -> bool:
+    condicion = func.lower(Variante.sku) == sku.lower()
+    return bool(sesion.scalar(select(exists().where(condicion, true() if otra is None else otra))))
+
+
 def _revisar_variante(sesion: Session, modelo_id: int, datos: VarianteEntrada, propia: int | None):
+    _entera(datos.stock_minimo)
     otra = Variante.id != propia if propia is not None else true()
-    repetida = sesion.scalar(
-        select(Variante).where(Variante.modelo_id == modelo_id, Variante.color == datos.color, otra)
+    # SQLite no pasa a minúsculas las letras con tilde: se compara en Python.
+    color = datos.color.casefold()
+    repetida = next(
+        (
+            v
+            for v in sesion.scalars(select(Variante).where(Variante.modelo_id == modelo_id, otra))
+            if v.color.casefold() == color
+        ),
+        None,
     )
     if repetida is not None:
         if not repetida.activo:
@@ -132,7 +155,7 @@ def _revisar_variante(sesion: Session, modelo_id: int, datos: VarianteEntrada, p
                 "Vuelve a usarla desde la ficha.",
             )
         raise HTTPException(409, f"Ya existe la variante {datos.color} en este modelo.")
-    if datos.sku and sesion.scalar(select(exists().where(Variante.sku == datos.sku, otra))):
+    if datos.sku and _sku_usado(sesion, datos.sku, otra):
         raise HTTPException(409, f"El código {datos.sku} ya está en uso.")
 
 
@@ -194,15 +217,21 @@ def editar_modelo(
 ) -> ModeloDetalle:
     _revisar_foto(request, datos.foto)
     modelo = _modelo(sesion, modelo_id)
+    anterior = modelo.foto
     for campo, valor in datos.model_dump().items():
         setattr(modelo, campo, valor)
     sesion.commit()
+    _limpiar_fotos(sesion, request, anterior)
     return _detalle_de(sesion, modelo)
 
 
 @router.delete("/modelos/{modelo_id}", status_code=204)
-def borrar_modelo(modelo_id: int, sesion: SesionDB) -> Response:
+def borrar_modelo(modelo_id: int, sesion: SesionDB, request: Request) -> Response:
     modelo = _modelo(sesion, modelo_id)
+    fotos = [
+        modelo.foto,
+        *sesion.scalars(select(Variante.foto).where(Variante.modelo_id == modelo.id)),
+    ]
     ids = select(Variante.id).where(Variante.modelo_id == modelo.id)
     if _tiene_movimientos(sesion, MovimientoInventario.variante_id.in_(ids)):
         modelo.activo = False
@@ -211,6 +240,7 @@ def borrar_modelo(modelo_id: int, sesion: SesionDB) -> Response:
         sesion.execute(delete(Variante).where(Variante.modelo_id == modelo.id))
         sesion.delete(modelo)
     sesion.commit()
+    _limpiar_fotos(sesion, request, *fotos)
     return Response(status_code=204)
 
 
@@ -236,7 +266,7 @@ def crear_variante(
     sesion.flush()
     if not datos.sku:
         sku, n = f"LA-{variante.id:04d}", 1
-        while sesion.scalar(select(exists().where(Variante.sku == sku))):
+        while _sku_usado(sesion, sku, Variante.id != variante.id):
             n += 1
             sku = f"LA-{variante.id:04d}-{n}"
         variante.sku = sku
@@ -253,19 +283,23 @@ def editar_variante(
     _revisar_variante(sesion, variante.modelo_id, datos, variante.id)
     if datos.pieza_unica and existencia(sesion, variante_id=variante.id) > 1:
         raise ErrorInventario(PIEZA_UNICA)
+    anterior = variante.foto
     _aplicar_variante(variante, datos)
     sesion.commit()
+    _limpiar_fotos(sesion, request, anterior)
     return _variante_con_existencia(sesion, variante)
 
 
 @router.delete("/variantes/{variante_id}", status_code=204)
-def borrar_variante(variante_id: int, sesion: SesionDB) -> Response:
+def borrar_variante(variante_id: int, sesion: SesionDB, request: Request) -> Response:
     variante = _variante(sesion, variante_id)
+    foto = variante.foto
     if _tiene_movimientos(sesion, MovimientoInventario.variante_id == variante.id):
         variante.activo = False
     else:
         sesion.delete(variante)
     sesion.commit()
+    _limpiar_fotos(sesion, request, foto)
     return Response(status_code=204)
 
 
@@ -281,6 +315,7 @@ def restaurar_variante(variante_id: int, sesion: SesionDB) -> VarianteSalida:
 @router.post("/variantes/{variante_id}/movimientos", status_code=201)
 def mover_variante(variante_id: int, datos: MovimientoVariante, sesion: SesionDB) -> VarianteSalida:
     variante = _variante(sesion, variante_id)
+    _entera(datos.cantidad)
     signo = -1 if datos.tipo == "merma" else 1
     if (
         variante.pieza_unica
@@ -302,6 +337,7 @@ def mover_variante(variante_id: int, datos: MovimientoVariante, sesion: SesionDB
 @router.post("/variantes/{variante_id}/conteo")
 def contar_variante(variante_id: int, datos: Conteo, sesion: SesionDB) -> VarianteSalida:
     variante = _variante(sesion, variante_id)
+    _entera(datos.cantidad_contada)
     if variante.pieza_unica and datos.cantidad_contada > 1:
         raise ErrorInventario(PIEZA_UNICA)
     contar(
