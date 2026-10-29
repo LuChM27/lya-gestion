@@ -1,0 +1,103 @@
+name: Release
+
+# Al crear una etiqueta vX.Y.Z: arma los paquetes de macOS, los prueba en Macs reales
+# (Intel y Apple silicon) y, si arrancan, los publica en GitHub Releases.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  armar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Verificar que la etiqueta coincide con VERSION
+        run: |
+          V=$(sed -n 's/^VERSION = "\(.*\)"$/\1/p' backend/app/version.py)
+          if [ "v$V" != "$GITHUB_REF_NAME" ]; then
+            echo "La etiqueta $GITHUB_REF_NAME no coincide con VERSION = $V en backend/app/version.py"
+            exit 1
+          fi
+      - name: Compilar la interfaz
+        working-directory: frontend
+        run: npm ci && npm run build
+      - name: Armar paquetes
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          for p in x86_64-apple-darwin aarch64-apple-darwin; do
+            uv run --project backend --with pillow python empaquetado/armar_paquete.py \
+              --plataforma "$p" --version "$V"
+          done
+          sed "s/__VERSION__/$V/" empaquetado/instalar.sh > build/instalar.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paquetes
+          path: |
+            build/*.tar.gz
+            build/*.sha256
+            build/instalar.sh
+
+  humo:
+    needs: armar
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15-intel
+            plataforma: x86_64-apple-darwin
+          - runner: macos-15
+            plataforma: aarch64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: paquetes
+          path: build
+      - name: Arrancar el paquete y comprobar salud y caché
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          P="lya-gestion-$V-${{ matrix.plataforma }}.tar.gz"
+          (cd build && shasum -a 256 -c "$P.sha256")
+          mkdir lya && tar -xzf "build/$P" -C lya && cd lya
+          ./python/bin/python3 -c "import rumps, AppKit, argon2, sqlalchemy, uvicorn"
+          DATA_DIR="$RUNNER_TEMP/datos" BACKUP_DIR="$RUNNER_TEMP/respaldos" \
+            ./python/bin/python3 -m app > "$RUNNER_TEMP/servicio.log" 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8080/api/salud >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8080/api/salud | grep -q "\"version\":\"$V\""
+          curl -fsSI http://127.0.0.1:8080/ | grep -qi "^cache-control: no-cache"
+          curl -fsSI http://127.0.0.1:8080/api/salud | grep -qi "^cache-control: no-store"
+      - name: Registro del servicio
+        if: always()
+        run: cat "$RUNNER_TEMP/servicio.log" || true
+
+  publicar:
+    needs: humo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: paquetes
+          path: build
+      - name: Publicar en GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          PRERELEASE=""
+          case "$V" in 0.*) PRERELEASE="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" build/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "L&A Gestión $V" \
+            --notes "Instalar en la Mac: curl -fsSL https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/instalar.sh | bash" \
+            $PRERELEASE
