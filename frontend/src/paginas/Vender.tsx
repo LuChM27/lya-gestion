@@ -39,7 +39,8 @@ export default function Vender() {
   const [cuenta, setCuenta] = useState("");
   const [descuento, setDescuento] = useState("");
   const hoy = hoyBogota();
-  const [fecha, setFecha] = useState(hoy);
+  // null = hoy. Solo cambia si ella elige otro día: así una pantalla abierta desde ayer no fecha la venta en ayer.
+  const [fecha, setFecha] = useState<string | null>(null);
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -86,7 +87,7 @@ export default function Vender() {
         canal,
         cuenta_id: Number(cuenta),
         descuento: Math.round(valorDescuento),
-        fecha: fecha && fecha !== hoy ? fecha : null,
+        fecha: fecha && fecha !== hoyBogota() ? fecha : null,
         nota: null,
         items: lineas.map((l) => ({ variante_id: l.item.variante_id, cantidad: l.n })),
       });
@@ -187,7 +188,7 @@ export default function Vender() {
         <Eleccion etiqueta="Canal" opciones={CANALES} valor={canal} alElegir={setCanal} />
         <Eleccion etiqueta="Pagó en" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={setCuenta} />
         <Campo etiqueta="Descuento (opcional)" inputMode="numeric" required={false} value={descuento} onChange={(e) => { setDescuento(e.target.value); setError(""); }} />
-        <Campo etiqueta="Fecha" type="date" max={hoy} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        <Campo etiqueta="Fecha" type="date" max={hoy} value={fecha ?? hoy} onChange={(e) => setFecha(e.target.value || null)} />
         <MensajeError texto={error} />
       </section>
       <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 md:bottom-4">

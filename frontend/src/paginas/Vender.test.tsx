@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { simularApi } from "../pruebas/simular";
 import Vender from "./Vender";
 
@@ -136,4 +136,19 @@ test("buscar filtra por color sin tildes", async () => {
   await userEvent.type(screen.getByLabelText("Buscar"), "rosá");
   expect(screen.queryByRole("button", { name: /^Bolso balde Negro/ })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: /^Bolso balde Rosa palo/ })).toBeInTheDocument();
+});
+
+afterEach(() => vi.useRealTimers());
+
+test("pantalla abierta desde antes de medianoche guarda la venta como de hoy", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-30T04:58:00Z")); // 29/10 a las 11:58 p. m. en Bogotá
+  const llamadas = api();
+  montar();
+  await producto("Rosa palo");
+  vi.setSystemTime(new Date("2026-10-30T05:02:00Z")); // ya es 30/10
+  await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
+  await screen.findByText("Detalle 12");
+  expect(enviado(llamadas)).toMatchObject({ fecha: null });
 });

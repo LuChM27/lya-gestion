@@ -223,3 +223,49 @@ def test_venta_inexistente_da_404(autenticado):
     r = autenticado.get("/api/ventas/999")
     assert r.status_code == 404 and r.json()["detail"] == "Esa venta no existe."
     assert autenticado.post("/api/ventas/999/anular").status_code == 404
+
+
+def test_dos_anulaciones_a_la_vez_devuelven_una_sola_vez(autenticado, vitrina, config_tmp):
+    import threading
+
+    from fastapi import HTTPException
+
+    from app.ventas.ventas import anular_venta
+
+    v = vender(autenticado, [item(vitrina["rosa"], 2)]).json()
+    motor = crear_motor(config_tmp)
+    errores: list[Exception] = []
+
+    def segunda():
+        with Session(motor) as s2:
+            try:
+                anular_venta(s2, s2.get(Pedido, v["id"]))
+                s2.commit()
+            except HTTPException as error:
+                errores.append(error)
+
+    with Session(motor) as s1:
+        anular_venta(s1, s1.get(Pedido, v["id"]))
+        hilo = threading.Thread(target=segunda)
+        hilo.start()
+        hilo.join(0.5)  # la segunda ya leyó el pedido o está esperando para escribir
+        s1.commit()
+    hilo.join()
+    motor.dispose()
+    assert [e.status_code for e in errores] == [409]
+    assert existencia_de(autenticado, vitrina["modelo"]["id"], vitrina["rosa"]) == 3
+
+
+def test_venta_de_ayer_lleva_su_fecha_al_dinero_y_al_stock(autenticado, vitrina, config_tmp):
+    from app.inventario.modelos import MovimientoInventario
+
+    ayer = hoy_bogota() - timedelta(days=1)
+    v = vender(autenticado, [item(vitrina["rosa"])], fecha=ayer.isoformat()).json()
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        fecha = s.get(Pedido, v["id"]).fecha
+        assert s.scalars(select(Pago.fecha)).one() == fecha
+        assert s.scalars(select(Transaccion.fecha)).one() == fecha
+        venta = select(MovimientoInventario.fecha).where(MovimientoInventario.pedido_id == v["id"])
+        assert s.scalars(venta).one() == fecha
+    motor.dispose()

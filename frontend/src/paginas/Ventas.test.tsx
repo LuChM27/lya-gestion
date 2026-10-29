@@ -99,3 +99,16 @@ test("inicio muestra las ventas de hoy", async () => {
   montar("/");
   expect(await screen.findByRole("link", { name: "Ventas de hoy: $ 240.000 (1)" })).toHaveAttribute("href", "/ventas");
 });
+
+test("doble toque en Anular envía una sola anulación", async () => {
+  const llamadas = simularApi({
+    "GET /api/ventas/12": { cuerpo: VENTA },
+    "POST /api/ventas/12/anular": { demoraMs: 50, cuerpo: { ...VENTA, estado: "cancelado", cuenta: null } },
+  });
+  montar("/ventas/12");
+  await userEvent.click(await screen.findByRole("button", { name: "Anular venta" }));
+  const anular = screen.getByRole("button", { name: "Anular" });
+  await userEvent.dblClick(anular);
+  expect(await screen.findByText("Anulada")).toBeInTheDocument();
+  expect(llamadas.filter((l) => l.clave === "POST /api/ventas/12/anular")).toHaveLength(1);
+});

@@ -4,7 +4,7 @@ from datetime import date, datetime, time
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
@@ -144,14 +144,19 @@ def registrar_venta(sesion: Session, datos: VentaEntrada) -> Pedido:
             variante_id=variante.id,
             pedido_id=pedido.id,
             unidad=f"de {modelo.nombre} {variante.color}",
+            fecha=pedido.fecha,
         )
     if pedido.total > 0:
-        pago = Pago(pedido_id=pedido.id, cuenta_id=cuenta.id, monto=pedido.total)
+        # Con la fecha de la venta: una venta de feria registrada después cuenta en su día.
+        pago = Pago(
+            pedido_id=pedido.id, cuenta_id=cuenta.id, monto=pedido.total, fecha=pedido.fecha
+        )
         sesion.add(pago)
         sesion.flush()
         ventas = sesion.scalar(select(Categoria.id).where(Categoria.nombre == "Ventas"))
         sesion.add(
             Transaccion(
+                fecha=pedido.fecha,
                 tipo="ingreso",
                 monto=pedido.total,
                 descripcion=f"Venta N.º {numero(pedido.id)}",
@@ -213,10 +218,16 @@ def _venta(sesion: Session, venta_id: int) -> Pedido:
 
 def anular_venta(sesion: Session, pedido: Pedido) -> None:
     """Corrige una venta mal registrada: no es una devolución de dinero, así que el ingreso se quita."""
-    if pedido.estado == "cancelado":
+    # El cambio de estado es la primera escritura y es condicional: si otro dispositivo
+    # (o un doble toque) anuló primero, esta espera su turno y no encuentra nada que cambiar.
+    cambio = sesion.execute(
+        update(Pedido)
+        .where(Pedido.id == pedido.id, Pedido.estado != "cancelado")
+        .values(estado="cancelado", actualizado=ahora_utc())
+    )
+    if cambio.rowcount == 0:
         raise HTTPException(409, "Esta venta ya está anulada.")
-    pedido.estado = "cancelado"
-    pedido.actualizado = ahora_utc()
+    sesion.refresh(pedido)
     for item in sesion.scalars(select(PedidoItem).where(PedidoItem.pedido_id == pedido.id)):
         registrar_movimiento(
             sesion,

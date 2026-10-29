@@ -16,12 +16,17 @@ export default function Confirmar({
 }) {
   const [confirmando, setConfirmando] = useState(false);
   const [error, setError] = useState("");
+  const [ocupado, setOcupado] = useState(false);
 
   async function confirmar() {
+    if (ocupado) return; // un doble toque no debe repetir la acción
+    setOcupado(true);
     try {
       await alConfirmar();
     } catch (err) {
       setError(err instanceof ErrorApi ? err.mensaje : String(err));
+    } finally {
+      setOcupado(false);
     }
   }
 
@@ -36,7 +41,8 @@ export default function Confirmar({
         <button
           type="button"
           onClick={confirmar}
-          className="h-11 rounded-lg bg-peligro px-4 font-bold text-sobre-peligro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peligro"
+          disabled={ocupado}
+          className="h-11 rounded-lg bg-peligro px-4 font-bold text-sobre-peligro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-peligro disabled:opacity-60"
         >
           {accion}
         </button>
