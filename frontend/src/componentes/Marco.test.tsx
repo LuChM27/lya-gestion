@@ -59,7 +59,7 @@ test("Más ofrece entrar desde el celular y salir", async () => {
   });
   montar("/mas");
   const pagina = within(screen.getByRole("main"));
-  await userEvent.click(pagina.getByRole("button", { name: "Entrar desde el celular" }));
+  await userEvent.click(pagina.getByRole("button", { name: /Entrar desde el celular/ }));
   expect(await pagina.findByText(/lya\.local/)).toBeInTheDocument();
   await userEvent.click(pagina.getByRole("button", { name: "Salir" }));
   expect(await screen.findByText("Pantalla de entrar")).toBeInTheDocument();

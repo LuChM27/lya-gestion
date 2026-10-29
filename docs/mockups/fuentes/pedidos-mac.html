@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<title>L&amp;A Gestión · Pedidos</title>
+<script src="7557e69d-3a28-4f89-9200-a5ac15bb531b"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<!-- Fuentes: Fraunces 500–700 (normal y cursiva) y Nunito 400–800, incluidas en la app con @fontsource. -->
+<style>
+body{margin:0;background:#FFF8FB}
+a{color:#B83467}a:hover{color:#8E2550}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #FFF8FB; font-family: Nunito, system-ui, sans-serif; color: #1F1A1D; display: flex; flex-wrap: wrap; box-sizing: border-box">
+
+  <nav aria-label="Menú principal" style="flex: 1 1 248px; max-width: 280px; min-width: 232px; box-sizing: border-box; padding: 20px 16px 20px 20px">
+    <div style="background: #FBEAF2; border-radius: 28px; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px; min-height: 1100px; box-sizing: border-box">
+      <div style="display: flex; justify-content: center; padding-top: 4px">
+        <img src="5c3e7d2f-4140-42b0-88d6-83b4040906c5" alt="L&amp;A Tejidos" width="148" height="148" style="width: 148px; height: 148px; border-radius: 50%; display: block; border: 4px solid #FFFFFF; box-shadow: 0 10px 28px rgba(217,72,126,0.18)">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg>
+          Inicio
+        </a>
+        <a href="VentaRapida.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l1 13H5z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+          Ventas
+        </a>
+        <a href="Pedidos.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #FFFFFF; color: #C23A6E; font-weight: 800; font-size: 15px; text-decoration: none; box-shadow: 0 6px 18px rgba(217,72,126,0.10)">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"></rect><path d="M9 4h6v3H9zM9 12h6M9 16h4"></path></svg>
+          Pedidos
+          <span style="margin-left: auto; font-size: 12px; font-weight: 800; background: #FBEAF2; color: #C23A6E; padding: 2px 9px; border-radius: 999px">6</span>
+        </a>
+        <a href="Inventario.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"></path><path d="M3 8l9 5 9-5M12 13v8"></path></svg>
+          Inventario
+        </a>
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"></path></svg>
+          Clientes
+        </a>
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"></rect><path d="M3 10h18M16 15h2"></path></svg>
+          Mis cuentas
+        </a>
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>
+          Estadísticas
+        </a>
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+          Calendario
+        </a>
+      </div>
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px">
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 20px; background: #FFFFFF; color: #1F1A1D; text-decoration: none; border: 1.5px dashed #E8AFCB">
+          <span style="width: 40px; height: 40px; border-radius: 12px; background: #FBEAF2; color: #C23A6E; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+            <svg aria-hidden="true" width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-weight: 800; font-size: 14px">Entrar desde el celular</span>
+            <span style="font-size: 12px; color: #6E5F67">Escanea el código QR</span>
+          </span>
+        </a>
+        <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 16px; color: #4A3D44; font-weight: 700; font-size: 15px; text-decoration: none">
+          <svg aria-hidden="true" width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"></path></svg>
+          Ajustes
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 36px 40px 48px 24px">
+    <div style="max-width: 1120px; display: flex; flex-direction: column; gap: 24px">
+
+      <header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 style="margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 40px; line-height: 1.1">Pedidos</h1>
+          <p style="margin: 0; font-size: 16px; color: #6E5F67">6 encargos activos · $ 385.000 por cobrar</p>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px">
+          <div role="group" aria-label="Vista" style="display: flex; background: #FBEAF2; border-radius: 999px; padding: 5px">
+            <button type="button" aria-pressed="true" style="border: 0; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 800; color: #C23A6E; padding: 0 18px; height: 38px; border-radius: 999px; box-shadow: 0 2px 8px rgba(217,72,126,0.12); cursor: pointer">Tablero</button>
+            <button type="button" style="border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 700; color: #6E5F67; padding: 0 18px; height: 38px; border-radius: 999px; cursor: pointer">Calendario</button>
+            <button type="button" style="border: 0; background: transparent; font-family: inherit; font-size: 14px; font-weight: 700; color: #6E5F67; padding: 0 18px; height: 38px; border-radius: 999px; cursor: pointer">Lista</button>
+          </div>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: #D9487E; color: #FFFFFF; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 10px 24px rgba(217,72,126,0.28)">
+            <svg aria-hidden="true" width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            Nuevo encargo
+          </button>
+        </div>
+      </header>
+
+      <!-- Semana -->
+      <section aria-label="Esta semana" style="background: #FFFFFF; border-radius: 28px; padding: 20px 24px; box-shadow: 0 8px 24px rgba(217,72,126,0.07); border: 1px solid #F6E6EE; display: flex; flex-wrap: wrap; align-items: center; gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 220px">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 800">Esta semana</h2>
+          <span style="font-size: 14px; color: #6E5F67">Tienes 18 de 24 horas de tejido ocupadas</span>
+          <div style="height: 10px; background: #FBEAF2; border-radius: 999px; overflow: hidden; margin-top: 6px; max-width: 260px">
+            <div style="width: 75%; height: 100%; background: #D9487E; border-radius: 999px"></div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex: 2 1 480px; justify-content: space-between">
+          <sc-for list="{{week}}" as="w" hint-placeholder-count="7">
+            <div style="flex: 1; min-width: 52px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border-radius: 18px; background: {{w.bg}}; color: {{w.fg}}">
+              <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em">{{w.dow}}</span>
+              <span style="font-size: 20px; font-weight: 800">{{w.d}}</span>
+              <span style="font-size: 11px; font-weight: 700; min-height: 15px">{{w.note}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- Tablero -->
+      <section aria-label="Pedidos por estado" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; align-items: start">
+        <sc-for list="{{columns}}" as="col" hint-placeholder-count="4">
+          <div style="background: #FBEAF2; border-radius: 26px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 4px 6px">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: {{col.dot}}"></span>
+              <h2 style="margin: 0; font-size: 15px; font-weight: 800">{{col.name}}</h2>
+              <span style="margin-left: auto; font-size: 13px; font-weight: 800; color: #6E5F67; background: #FFFFFF; padding: 2px 10px; border-radius: 999px">{{col.count}}</span>
+            </div>
+            <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="2">
+              <article style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 14px rgba(217,72,126,0.06)">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+                  <span style="font-size: 12px; font-weight: 800; color: #6E5F67">{{c.id}}</span>
+                  <span style="font-size: 12px; font-weight: 800; color: #5E4F57; background: #FFF8FB; border: 1px solid #F1DCE6; padding: 2px 8px; border-radius: 999px">{{c.channel}}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px">
+                  <h3 style="margin: 0; font-size: 15px; font-weight: 800">{{c.client}}</h3>
+                  <span style="font-size: 13px; color: #5E4F57; line-height: 1.4">{{c.item}}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #4A3D44">
+                  <svg aria-hidden="true" width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+                  {{c.date}}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #6E5F67">
+                    <span>{{c.paidLabel}}</span><span style="color: #1F1A1D; font-weight: 800">{{c.total}}</span>
+                  </div>
+                  <div style="height: 8px; border-radius: 999px; background: #F6E6EE; overflow: hidden">
+                    <div style="height: 100%; border-radius: 999px; width: {{c.paid}}; background: {{c.barColor}}"></div>
+                  </div>
+                </div>
+                <sc-if value="{{c.warn}}" hint-placeholder-val="{{false}}">
+                  <div style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; font-weight: 700; color: #8A6A0A; background: #FBF3DC; padding: 8px 10px; border-radius: 12px; line-height: 1.35">{{c.warnText}}</div>
+                </sc-if>
+                <sc-if value="{{c.cta}}" hint-placeholder-val="{{false}}">
+                  <button type="button" style="height: 44px; border-radius: 14px; border: 0; background: #D9487E; color: #FFFFFF; font-family: inherit; font-weight: 800; font-size: 14px; cursor: pointer">{{c.ctaText}}</button>
+                </sc-if>
+              </article>
+            </sc-for>
+          </div>
+        </sc-for>
+      </section>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1180}}">
+class Component extends DCLogic {
+  renderVals() {
+    function card(o) {
+      o.warn = !!o.warnText; o.cta = !!o.ctaText;
+      o.barColor = o.paid === '100%' ? '#5DBFA3' : '#D9487E';
+      return o;
+    }
+    return {
+      week: [
+        { dow: 'Lun', d: '19', note: '', bg: '#FFF8FB', fg: '#6E5F67' },
+        { dow: 'Mar', d: '20', note: '', bg: '#FFF8FB', fg: '#6E5F67' },
+        { dow: 'Mié', d: '21', note: 'Empezar', bg: '#FFF8FB', fg: '#6E5F67' },
+        { dow: 'Jue', d: '22', note: '', bg: '#FFF8FB', fg: '#6E5F67' },
+        { dow: 'Vie', d: '23', note: '', bg: '#FFF8FB', fg: '#6E5F67' },
+        { dow: 'Sáb', d: '24', note: 'Hoy', bg: '#D9487E', fg: '#FFFFFF' },
+        { dow: 'Dom', d: '25', note: '', bg: '#FFF8FB', fg: '#6E5F67' }
+      ],
+      columns: [
+        { name: 'Apartado', count: '2', dot: '#B49AD0', cards: [
+          card({ id: '#0151', channel: 'Instagram', client: 'Camila P.', item: 'Cartera Margarita × 2 · blanco hueso', date: 'Lista para el 30/10', paid: '50%', paidLabel: 'Abono 50 %', total: '$ 178.000', warnText: 'Faltan 2 argollas doradas para empezar', ctaText: '' }),
+          card({ id: '#0153', channel: 'WhatsApp', client: 'Laura M.', item: 'Arreglo de asa · cartera tejida', date: 'Lista para el 28/10', paid: '50%', paidLabel: 'Abono 50 %', total: '$ 30.000', warnText: '', ctaText: '' })
+        ] },
+        { name: 'En proceso', count: '2', dot: '#D9487E', cards: [
+          card({ id: '#0148', channel: 'TikTok', client: 'Valentina R.', item: 'Bolso balde con argollas · verde menta', date: 'Lista para el 26/10', paid: '50%', paidLabel: 'Abono 50 %', total: '$ 125.000', warnText: '', ctaText: '' }),
+          card({ id: '#0150', channel: 'Feria', client: 'Daniela T.', item: 'Bolso hombro Peonía · rosa intenso', date: 'Lista para el 02/11', paid: '50%', paidLabel: 'Abono 50 %', total: '$ 145.000', warnText: '', ctaText: '' })
+        ] },
+        { name: 'Listo', count: '1', dot: '#C9A227', cards: [
+          card({ id: '#0149', channel: 'Instagram', client: 'Sofía G.', item: 'Mini bolso de murano · perla', date: 'Terminado el 23/10', paid: '50%', paidLabel: 'Falta $ 90.000', total: '$ 180.000', warnText: '', ctaText: 'Registrar pago' })
+        ] },
+        { name: 'Enviado', count: '1', dot: '#5DBFA3', cards: [
+          card({ id: '#0146', channel: 'WhatsApp', client: 'Mariana L.', item: 'Bolso playero de rafia · natural', date: 'Enviado el 22/10 · Medellín', paid: '100%', paidLabel: 'Pagado', total: '$ 110.000', warnText: '', ctaText: '' })
+        ] }
+      ]
+    };
+  }
+}
+</script>
+
+
+</body></html>

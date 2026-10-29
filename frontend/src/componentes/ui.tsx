@@ -1,67 +1,70 @@
-// Piezas de los mockups (docs/mockups/mockups.html) que comparten todas las pantallas.
-import { ShoppingBag, type LucideIcon } from "lucide-react";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+// Piezas compartidas, con los estilos exactos de docs/mockups/fuentes/*.html.
+import type { ButtonHTMLAttributes, ComponentType, ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { fechaLarga } from "../formato";
 import { miniatura } from "../inventario";
+import { IconoBolso } from "./iconos";
 
 export type EstadoStock = "ok" | "por_agotarse" | "bajo_minimo";
+type Icono = ComponentType<{ tamano?: number; trazo?: number }>;
 
+/** Título en Fraunces: 30 px en el celular y 40 px en la Mac (inicio-mac, inicio-celular). */
 export function Titulo({ children, nivel = 1 }: { children: ReactNode; nivel?: 1 | 2 }) {
-  if (nivel === 2) return <h2 className="font-titulo text-xl font-semibold">{children}</h2>;
-  return <h1 className="font-titulo text-[26px] leading-tight font-semibold md:text-[40px]">{children}</h1>;
+  if (nivel === 2) return <h2 className="text-[17px] font-extrabold md:text-[19px]">{children}</h2>;
+  return <h1 className="font-titulo text-[30px] leading-[1.15] font-semibold tracking-[-0.01em] md:text-[40px] md:leading-[1.1]">{children}</h1>;
 }
 
-/** Fecha pequeña, título en Fraunces, subtítulo y acciones a la derecha. */
+/** Fecha pequeña, título, subtítulo y acciones a la derecha (encabezado de inicio-mac e inventario-mac). */
 export function Encabezado({ fecha = false, titulo, subtitulo, acciones }: { fecha?: boolean; titulo: ReactNode; subtitulo?: ReactNode; acciones?: ReactNode }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div className="min-w-0">
-        {fecha && <p className="mb-1 text-sm font-semibold text-tinta-media">{fechaLarga(new Date().toISOString())}</p>}
+    <header className="flex flex-wrap items-end justify-between gap-5">
+      <div className="flex min-w-0 flex-col gap-0.5 md:gap-1.5">
+        {fecha && <span className="text-sm font-bold text-suave">{fechaLarga(new Date().toISOString())}</span>}
         <Titulo>{titulo}</Titulo>
-        {subtitulo && <p className="mt-1 text-suave">{subtitulo}</p>}
+        {subtitulo && <p className="text-base text-suave">{subtitulo}</p>}
       </div>
-      {acciones && <div className="flex flex-wrap items-center gap-2">{acciones}</div>}
+      {acciones && <div className="flex flex-wrap items-center gap-3">{acciones}</div>}
     </header>
   );
 }
 
 const PRINCIPAL =
-  "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-rosa px-6 font-extrabold text-white shadow-boton hover:bg-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60";
-const PASTILLA =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-full border border-borde bg-superficie px-5 font-bold text-rosa-oscuro hover:border-rosa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60";
+  "inline-flex h-12 items-center justify-center gap-2 rounded-full bg-rosa px-[22px] text-[15px] font-extrabold text-white no-underline shadow-boton hover:bg-rosa-activo hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60";
+const SECUNDARIO =
+  "inline-flex h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-rosa-palo bg-superficie px-5 text-[15px] font-extrabold text-rosa-oscuro no-underline hover:border-rosa hover:text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60";
 
-type BotonProps = ButtonHTMLAttributes<HTMLButtonElement> & { icono?: LucideIcon; a?: string };
+type BotonProps = ButtonHTMLAttributes<HTMLButtonElement> & { icono?: Icono; a?: string };
 
-function contenido(Icono: LucideIcon | undefined, children: ReactNode) {
-  return (
-    <>
-      {Icono && <Icono aria-hidden size={18} strokeWidth={2.2} />}
-      {children}
-    </>
-  );
+function boton(clases: string, trazo: number) {
+  return function Boton({ icono: Icono, a, children, className = "", ...props }: BotonProps) {
+    const contenido = (
+      <>
+        {Icono && <Icono tamano={18} trazo={trazo} />}
+        {children}
+      </>
+    );
+    if (a) {
+      return (
+        <Link to={a} className={`${clases} ${className}`}>
+          {contenido}
+        </Link>
+      );
+    }
+    return (
+      <button type="button" className={`${clases} ${className}`} {...props}>
+        {contenido}
+      </button>
+    );
+  };
 }
 
-export function BotonPrincipal({ icono, a, children, className = "", ...props }: BotonProps) {
-  if (a) return <Link to={a} className={`${PRINCIPAL} ${className}`}>{contenido(icono, children)}</Link>;
-  return (
-    <button type="button" className={`${PRINCIPAL} ${className}`} {...props}>
-      {contenido(icono, children)}
-    </button>
-  );
-}
+/** Botón rosa con sombra: «Nueva venta», «Nuevo modelo». */
+export const BotonPrincipal = boton(PRINCIPAL, 2.4);
+/** Botón blanco con borde rosa palo: «Registrar compra de insumos». */
+export const BotonPastilla = boton(SECUNDARIO, 1.8);
 
-export function BotonPastilla({ icono, a, children, className = "", ...props }: BotonProps) {
-  if (a) return <Link to={a} className={`${PASTILLA} ${className}`}>{contenido(icono, children)}</Link>;
-  return (
-    <button type="button" className={`${PASTILLA} ${className}`} {...props}>
-      {contenido(icono, children)}
-    </button>
-  );
-}
-
-/** Grupo de una sola opción, como «¿Por dónde te compró?»: la elegida va oscura. */
-export function Pastillas({ etiqueta, opciones, valor, alElegir }: { etiqueta: string; opciones: readonly (readonly [string, string])[]; valor: string; alElegir: (v: string) => void }) {
+/** Grupo de una sola opción. La elegida va negra (filtros de inventario-mac y pasos de venta-celular). */
+export function Pastillas({ etiqueta, opciones, valor, alElegir, alto = "normal" }: { etiqueta: string; opciones: readonly (readonly [string, string])[]; valor: string; alElegir: (v: string) => void; alto?: "normal" | "chico" }) {
   return (
     <div role="group" aria-label={etiqueta} className="flex flex-wrap gap-2">
       {opciones.map(([v, texto]) => (
@@ -70,8 +73,8 @@ export function Pastillas({ etiqueta, opciones, valor, alElegir }: { etiqueta: s
           type="button"
           aria-pressed={valor === v}
           onClick={() => alElegir(v)}
-          className={`h-11 rounded-full border px-4 text-[15px] font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
-            valor === v ? "border-elegido bg-elegido text-sobre-elegido" : "border-borde bg-superficie text-tinta-media hover:border-rosa"
+          className={`${alto === "chico" ? "h-10" : "h-11"} rounded-full border-[1.5px] px-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
+            valor === v ? "border-elegido bg-elegido font-extrabold text-sobre-elegido" : "border-borde-campo bg-superficie font-bold text-tinta-media"
           }`}
         >
           {texto}
@@ -81,17 +84,17 @@ export function Pastillas({ etiqueta, opciones, valor, alElegir }: { etiqueta: s
   );
 }
 
-/** Pestañas en pastilla rosa claro, como «Productos en vitrina / Insumos». */
+/** Pestañas sobre rosa claro: «Productos en vitrina / Insumos» (inventario-mac). */
 export function Pestanas({ etiqueta, pestanas }: { etiqueta: string; pestanas: { a: string; texto: string }[] }) {
   return (
-    <nav aria-label={etiqueta} className="inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-rosa-claro p-1">
+    <nav aria-label={etiqueta} className="inline-flex max-w-full overflow-x-auto rounded-full bg-rosa-claro p-[5px]">
       {pestanas.map((p) => (
         <NavLink
           key={p.a}
           to={p.a}
           className={({ isActive }) =>
-            `inline-flex h-10 shrink-0 items-center rounded-full px-4 text-sm font-extrabold focus-visible:outline-2 focus-visible:outline-rosa ${
-              isActive ? "bg-superficie text-rosa-oscuro shadow-tarjeta" : "text-tinta-media"
+            `inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-[15px] no-underline focus-visible:outline-2 focus-visible:outline-rosa ${
+              isActive ? "bg-superficie font-extrabold text-rosa-activo shadow-pestana" : "font-bold text-suave hover:text-rosa-activo"
             }`
           }
         >
@@ -102,18 +105,16 @@ export function Pestanas({ etiqueta, pestanas }: { etiqueta: string; pestanas: {
   );
 }
 
-const TONOS = {
-  normal: "border border-borde bg-superficie",
-  rosa: "bg-rosa text-white shadow-boton",
-  suave: "bg-rosa-claro",
-};
+const INSIGNIA = { ok: "bg-ok-fondo text-ok", alerta: "bg-alerta-fondo text-alerta", rosa: "bg-rosa-claro text-rosa-oscuro" };
 
-export function TarjetaCifra({ titulo, cifra, detalle, tono = "normal" }: { titulo: string; cifra: ReactNode; detalle?: ReactNode; tono?: keyof typeof TONOS }) {
+/** Tarjeta de cifra de inicio-mac: blanca, o rosa claro sin sombra (En vitrina). */
+export function TarjetaCifra({ titulo, cifra, detalle, insignia, tono = "blanca" }: { titulo: string; cifra: ReactNode; detalle?: ReactNode; insignia?: { texto: string; tono: keyof typeof INSIGNIA }; tono?: "blanca" | "rosa" }) {
   return (
-    <section className={`rounded-3xl p-5 shadow-tarjeta ${TONOS[tono]}`}>
-      <h2 className={`text-sm font-bold ${tono === "rosa" ? "text-white/90" : "text-tinta-media"}`}>{titulo}</h2>
-      <p className="my-1 text-[34px] leading-tight font-extrabold md:text-[38px]">{cifra}</p>
-      {detalle && <div className="text-sm font-bold">{detalle}</div>}
+    <section className={`flex flex-col gap-2.5 rounded-3xl p-[22px] ${tono === "rosa" ? "bg-rosa-claro" : "border border-borde bg-superficie shadow-tarjeta"}`}>
+      <h2 className="text-sm font-bold text-suave">{titulo}</h2>
+      <p className="text-[30px] leading-tight font-extrabold tracking-[-0.01em]">{cifra}</p>
+      {insignia && <span className={`self-start rounded-full px-2.5 py-1 text-[13px] font-extrabold ${INSIGNIA[insignia.tono]}`}>{insignia.texto}</span>}
+      {detalle && <span className="text-[13px] font-bold text-suave">{detalle}</span>}
     </section>
   );
 }
@@ -126,26 +127,23 @@ const ETIQUETAS: Record<EstadoStock, [string, string]> = {
 
 export function Etiqueta({ estado }: { estado: EstadoStock }) {
   const [texto, clases] = ETIQUETAS[estado];
-  return <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-extrabold whitespace-nowrap ${clases}`}>{texto}</span>;
+  return <span className={`inline-block rounded-full px-2.5 py-1 text-xs leading-none font-extrabold whitespace-nowrap ${clases}`}>{texto}</span>;
 }
 
+/** Fondo y trazo de cada categoría, como las tarjetas sin foto de los mockups. */
 const CATEGORIA: Record<string, [string, string]> = {
-  crochet: ["bg-rosa-claro", "text-rosa"],
+  crochet: ["bg-rosa-claro", "text-rosa-activo"],
   murano: ["bg-ok-fondo", "text-ok"],
   cristal: ["bg-lila-fondo", "text-lila"],
   otro: ["bg-alerta-fondo", "text-alerta"],
 };
 
-/** La foto del producto o, si no tiene, el color de su categoría con el ícono de bolso. */
-export function FotoProducto({ foto, categoria, nombre, className = "" }: { foto: string | null; categoria: string; nombre: string; className?: string }) {
-  const [fondo, acento] = CATEGORIA[categoria] ?? CATEGORIA.otro;
+/** La foto del producto o, si no tiene, el color de su categoría con el bolso. */
+export function FotoProducto({ foto, categoria, nombre, className = "h-[150px]", icono = 56 }: { foto: string | null; categoria: string; nombre: string; className?: string; icono?: number }) {
+  const [fondo, tinta] = CATEGORIA[categoria] ?? CATEGORIA.otro;
   return (
-    <div className={`relative aspect-[4/3] w-full overflow-hidden rounded-2xl ${fondo} ${className}`}>
-      {foto ? (
-        <img src={miniatura(foto)} alt={nombre} className="h-full w-full object-cover" />
-      ) : (
-        <ShoppingBag aria-hidden className={`absolute inset-0 m-auto ${acento}`} size={34} strokeWidth={1.8} />
-      )}
+    <div className={`relative flex items-center justify-center overflow-hidden ${fondo} ${tinta} ${className}`}>
+      {foto ? <img src={miniatura(foto)} alt={nombre} className="absolute inset-0 h-full w-full object-cover" /> : <IconoBolso tamano={icono} trazo={icono > 40 ? 1.2 : 1.4} />}
     </div>
   );
 }

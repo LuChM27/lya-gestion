@@ -1,6 +1,6 @@
 ---
 name: diseno-lya
-description: Use before creating, changing, planning or reviewing any screen, component, style or copy in frontend/ of L&A Gestión — every screen must match the reference mockups in docs/mockups/mockups.html (Fraunces titles, Nunito text, rosa palette, pill buttons, sidebar with logo, phone bottom bar with central «+»).
+description: Use before creating, changing, planning or reviewing any screen, component, style or copy in frontend/ of L&A Gestión — every screen must copy the exact inline styles of the mockup sources in docs/mockups/fuentes/*.html (colors, sizes, radii, shadows, SVG icons), not just their structure.
 ---
 
 # Diseño de L&A Gestión
@@ -13,11 +13,13 @@ Toda pantalla nueva o modificada se ve como ellas. Si una pantalla no tiene mock
 
 ## Antes de escribir código
 
-1. **Abre los mockups y míralos.** El HTML pesa 2,3 MB y no se lee como texto.
-   - Sírvelos con `cd docs/mockups && python -m http.server 8765 --bind 127.0.0.1` y ábrelos en el navegador en `http://127.0.0.1:8765/mockups.html`.
-   - Cada pantalla es un `<iframe>` del mismo origen: con `contentDocument` puedes leer estilos calculados.
-2. **En un plan:** cada tarea de interfaz dice qué mockup sigue.
-3. **Al terminar:** compara tu pantalla con el mockup en el navegador, a 1440 px y a 390 px. Revisa también 360 px, sin desplazamiento horizontal.
+1. **La fuente de verdad es el código de los mockups**, en `docs/mockups/fuentes/*.html`: inicio-mac, inventario-mac, pedidos-mac, login-mac, inicio-celular y venta-celular. Son HTML legible, con cada estilo en línea.
+   - **Copia los valores exactos:** colores, tamaños, pesos, rellenos, radios, sombras, bordes y los trazos SVG de los íconos.
+   - **No los aproximes «a ojo»:** una pantalla que solo copia la estructura se ve genérica, y el usuario lo rechazó.
+2. **Íconos:** son los SVG propios de los mockups (trazo 1,8–2,6, `viewBox 0 0 24 24`) y están en `frontend/src/componentes/iconos.tsx`. Si falta uno, cópialo de las fuentes; no uses librerías de íconos.
+3. **Modo oscuro:** los mockups solo son claros y la app también. No agregues `prefers-color-scheme: dark`.
+4. **Para ver el resultado**, sirve los mockups con `cd docs/mockups && python -m http.server 8765 --bind 127.0.0.1` y abre `http://127.0.0.1:8765/mockups.html`. Pon tu pantalla al lado, a 1440 px y a 390 px, con el navegador en modo claro. Revisa también 360 px, sin desplazamiento horizontal.
+5. **En un plan:** cada tarea de interfaz dice qué archivo de `fuentes/` sigue.
 
 ## Valores (sacados de los mockups)
 
@@ -102,6 +104,4 @@ Fondo de la foto que falta, según categoría: crochet `#FBEAF2`, murano `#E3F5E
 
 ## Modo oscuro
 
-- Los mockups son claros.
-- El modo oscuro usa los mismos tokens redefinidos en `frontend/src/tema.css`.
-- Revisa el contraste de cada color nuevo en los dos modos.
+La app no tiene modo oscuro, porque los mockups no lo tienen. Si algún día se agrega, será una opción manual con su propio diseño.

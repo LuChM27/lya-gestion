@@ -31,10 +31,10 @@ export default function Entrar() {
         <MensajeError texto={error} />
         <Boton type="submit" disabled={enviando}>Entrar</Boton>
       </form>
-      <p className="mt-6 rounded-2xl bg-rosa-claro p-4 text-sm text-tinta-media">
-        <strong className="text-tinta">¿Olvidaste tu contraseña?</strong> Usa el código de 8 dígitos que viene en tu guía de instalación.{" "}
-        <Link to="/recuperar" className="font-extrabold text-rosa-oscuro underline">Recuperar acceso</Link>
-      </p>
+      <div className="mt-[22px] rounded-[18px] bg-rosa-claro px-4 py-3.5 text-sm leading-normal text-tinta-media">
+        <strong className="font-extrabold">¿Olvidaste tu contraseña?</strong> Usa el código de 8 dígitos que viene en tu guía de instalación.{" "}
+        <Link to="/recuperar" className="font-extrabold">Recuperar acceso</Link>
+      </div>
     </Tarjeta>
   );
 }
