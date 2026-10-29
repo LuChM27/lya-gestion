@@ -15,6 +15,12 @@ export function pesos(n: number): string {
   return "$ " + conDecimales(Math.round(n), 0);
 }
 
+/** Precio por unidad de insumo: con centavos solo si los tiene ($ 27,50). */
+export function precio(n: number): string {
+  const centavos = Math.round(n * 100) % 100;
+  return centavos === 0 ? pesos(n) : "$ " + conDecimales(n, 2).replace(/,(\d)$/, ",$10");
+}
+
 export function cantidad(n: number): string {
   return conDecimales(n, 3);
 }

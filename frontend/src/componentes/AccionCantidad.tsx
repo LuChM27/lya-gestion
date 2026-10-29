@@ -29,7 +29,7 @@ export default function AccionCantidad({
     try {
       await alGuardar(n);
     } catch (err) {
-      setError(err instanceof ErrorApi ? err.mensaje : String(err));
+      setError(err instanceof ErrorApi ? err.mensaje : err instanceof Error ? err.message : String(err));
     } finally {
       setEnviando(false);
     }
