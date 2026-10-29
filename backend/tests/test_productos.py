@@ -195,3 +195,37 @@ def test_cantidades_decimales_y_numeros_json(autenticado, variante):
 
 def test_respuestas_no_store(autenticado):
     assert autenticado.get("/api/inventario/modelos").headers["cache-control"] == "no-store"
+
+
+def test_restaurar_modelo_archivado(autenticado, modelo, variante):
+    mover(autenticado, variante["id"], "ingreso_vitrina", 1)
+    autenticado.delete(f"/api/inventario/modelos/{modelo['id']}")
+    r = autenticado.post(f"/api/inventario/modelos/{modelo['id']}/restaurar")
+    assert r.status_code == 200 and r.json()["activo"] is True
+    assert r.json()["variantes"][0]["activo"] is True
+    assert [m["id"] for m in autenticado.get("/api/inventario/modelos").json()] == [modelo["id"]]
+
+
+def test_restaurar_variante_archivada(autenticado, modelo, variante):
+    mover(autenticado, variante["id"], "ingreso_vitrina", 1)
+    autenticado.delete(f"/api/inventario/variantes/{variante['id']}")
+    r = autenticado.post(f"/api/inventario/variantes/{variante['id']}/restaurar")
+    assert r.status_code == 200 and r.json()["activo"] is True
+
+
+def test_color_de_variante_archivada_lo_dice(autenticado, modelo, variante):
+    mover(autenticado, variante["id"], "ingreso_vitrina", 1)
+    autenticado.delete(f"/api/inventario/variantes/{variante['id']}")
+    r = autenticado.post(
+        f"/api/inventario/modelos/{modelo['id']}/variantes", json={"color": "Rosa palo"}
+    )
+    assert r.status_code == 409
+    assert r.json()["detail"] == (
+        "Ya existe la variante Rosa palo en este modelo, archivada. Vuelve a usarla desde la ficha."
+    )
+
+
+def test_dato_invalido_da_mensaje_en_espanol(autenticado, variante):
+    r = mover(autenticado, variante["id"], "ingreso_vitrina", 0)
+    assert r.status_code == 422
+    assert r.json()["detail"] == "Revisa los datos: hay un valor que no es válido."

@@ -80,8 +80,14 @@ def _revisar(sesion: Session, datos: InsumoEntrada, propio: int | None) -> None:
         raise ErrorInventario("Escribe la unidad de compra y cuánto trae.")
     # SQLite no pasa a minúsculas las letras con tilde: se compara en Python.
     nombre = datos.nombre.casefold()
-    for otro_id, otro in sesion.execute(select(Insumo.id, Insumo.nombre)):
+    for otro_id, otro, activo in sesion.execute(select(Insumo.id, Insumo.nombre, Insumo.activo)):
         if otro_id != propio and otro.casefold() == nombre:
+            if not activo:
+                raise HTTPException(
+                    409,
+                    f"Ya existe el insumo {datos.nombre}, archivado. "
+                    "Búscalo en Archivados y vuelve a usarlo.",
+                )
             raise HTTPException(409, f"Ya existe el insumo {datos.nombre}.")
 
 
@@ -149,6 +155,14 @@ def borrar_insumo(insumo_id: int, sesion: SesionDB) -> Response:
         sesion.delete(insumo)
     sesion.commit()
     return Response(status_code=204)
+
+
+@router.post("/{insumo_id}/restaurar")
+def restaurar_insumo(insumo_id: int, sesion: SesionDB) -> InsumoSalida:
+    insumo = _insumo(sesion, insumo_id)
+    insumo.activo = True
+    sesion.commit()
+    return _salida(sesion, insumo)
 
 
 @router.get("/{insumo_id}/precios")

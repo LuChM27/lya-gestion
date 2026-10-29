@@ -122,9 +122,15 @@ def _tiene_movimientos(sesion: Session, *condiciones) -> bool:
 def _revisar_variante(sesion: Session, modelo_id: int, datos: VarianteEntrada, propia: int | None):
     otra = Variante.id != propia if propia is not None else true()
     repetida = sesion.scalar(
-        select(exists().where(Variante.modelo_id == modelo_id, Variante.color == datos.color, otra))
+        select(Variante).where(Variante.modelo_id == modelo_id, Variante.color == datos.color, otra)
     )
-    if repetida:
+    if repetida is not None:
+        if not repetida.activo:
+            raise HTTPException(
+                409,
+                f"Ya existe la variante {datos.color} en este modelo, archivada. "
+                "Vuelve a usarla desde la ficha.",
+            )
         raise HTTPException(409, f"Ya existe la variante {datos.color} en este modelo.")
     if datos.sku and sesion.scalar(select(exists().where(Variante.sku == datos.sku, otra))):
         raise HTTPException(409, f"El código {datos.sku} ya está en uso.")
@@ -208,6 +214,15 @@ def borrar_modelo(modelo_id: int, sesion: SesionDB) -> Response:
     return Response(status_code=204)
 
 
+@router.post("/modelos/{modelo_id}/restaurar")
+def restaurar_modelo(modelo_id: int, sesion: SesionDB) -> ModeloDetalle:
+    modelo = _modelo(sesion, modelo_id)
+    modelo.activo = True
+    sesion.execute(update(Variante).where(Variante.modelo_id == modelo.id).values(activo=True))
+    sesion.commit()
+    return _detalle_de(sesion, modelo)
+
+
 @router.post("/modelos/{modelo_id}/variantes", status_code=201)
 def crear_variante(
     modelo_id: int, datos: VarianteEntrada, sesion: SesionDB, request: Request
@@ -252,6 +267,15 @@ def borrar_variante(variante_id: int, sesion: SesionDB) -> Response:
         sesion.delete(variante)
     sesion.commit()
     return Response(status_code=204)
+
+
+@router.post("/variantes/{variante_id}/restaurar")
+def restaurar_variante(variante_id: int, sesion: SesionDB) -> VarianteSalida:
+    variante = _variante(sesion, variante_id)
+    variante.activo = True
+    sesion.execute(update(Modelo).where(Modelo.id == variante.modelo_id).values(activo=True))
+    sesion.commit()
+    return _variante_con_existencia(sesion, variante)
 
 
 @router.post("/variantes/{variante_id}/movimientos", status_code=201)

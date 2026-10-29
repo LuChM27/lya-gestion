@@ -130,3 +130,21 @@ def test_lista_busca_filtra_y_ordena(autenticado):
     assert [x["id"] for x in r] == [a["id"]]
     r = autenticado.get("/api/inventario/insumos", params={"buscar": "CRISTAL"}).json()
     assert [x["id"] for x in r] == [b["id"]]
+
+
+def test_restaurar_insumo_archivado(autenticado, insumo):
+    entrada(autenticado, insumo["id"], cantidad=1)
+    autenticado.delete(f"/api/inventario/insumos/{insumo['id']}")
+    r = autenticado.post(f"/api/inventario/insumos/{insumo['id']}/restaurar")
+    assert r.status_code == 200 and r.json()["activo"] is True
+    assert [i["id"] for i in autenticado.get("/api/inventario/insumos").json()] == [insumo["id"]]
+
+
+def test_nombre_de_insumo_archivado_lo_dice(autenticado, insumo):
+    entrada(autenticado, insumo["id"], cantidad=1)
+    autenticado.delete(f"/api/inventario/insumos/{insumo['id']}")
+    r = autenticado.post("/api/inventario/insumos", json=INSUMO)
+    assert r.status_code == 409
+    assert r.json()["detail"] == (
+        "Ya existe el insumo Hilo algodón rosa, archivado. Búscalo en Archivados y vuelve a usarlo."
+    )
