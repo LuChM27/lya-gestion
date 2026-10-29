@@ -1,14 +1,23 @@
-import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 
-export function Tarjeta({ titulo, children }: { titulo: string; children: ReactNode }) {
+/** Pantallas sin sesión, como «Inicio de sesión · Mac»: logo a la izquierda y formulario a la derecha. */
+export function Tarjeta({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: ReactNode }) {
   return (
-    <main className="min-h-dvh grid place-items-center bg-rosa-palo px-4 py-10">
-      <section className="w-full max-w-sm rounded-2xl border border-borde bg-superficie p-6 shadow-sm">
-        <img src="/logo.webp" alt="L&A Tejidos" className="mx-auto mb-4 h-28 w-28 rounded-full object-cover" />
-        <h1 className="mb-6 text-center text-xl font-bold">{titulo}</h1>
-        {children}
+    <div className="grid min-h-dvh bg-fondo md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <section className="flex flex-col items-center justify-center gap-6 bg-rosa-palo px-6 py-10 md:py-16">
+        <img src="/logo.webp" alt="L&A Tejidos" className="h-32 w-32 rounded-full object-cover md:h-[22rem] md:w-[22rem]" />
+        <p className="max-w-64 text-center font-semibold text-tinta md:text-lg">Bolsos y accesorios hechos a mano, con todo en orden.</p>
       </section>
-    </main>
+      <main className="flex items-start justify-center px-6 py-10 md:items-center">
+        <div className="w-full max-w-sm">
+          <h1 className="font-titulo text-[30px] leading-tight font-semibold md:text-[38px]">{titulo}</h1>
+          {subtitulo && <p className="mt-1 mb-6 text-suave">{subtitulo}</p>}
+          {!subtitulo && <div className="mb-6" />}
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }
 
@@ -25,6 +34,36 @@ export function Campo({ etiqueta, ...props }: { etiqueta: string } & InputHTMLAt
         className="h-12 w-full rounded-[14px] border border-borde bg-superficie px-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-rosa"
         {...props}
       />
+    </div>
+  );
+}
+
+/** Contraseña con el botón de ojo del mockup para verla mientras se escribe. */
+export function CampoContrasena({ etiqueta, ...props }: { etiqueta: string } & InputHTMLAttributes<HTMLInputElement>) {
+  const id = useId();
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="mb-4">
+      <label htmlFor={id} className="mb-1 block text-sm font-semibold">
+        {etiqueta}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          required
+          type={visible ? "text" : "password"}
+          className="h-12 w-full rounded-[14px] border border-borde bg-superficie pr-12 pl-4 text-base outline-none focus-visible:border-rosa focus-visible:ring-2 focus-visible:ring-rosa/30"
+          {...props}
+        />
+        <button
+          type="button"
+          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          onClick={() => setVisible((v) => !v)}
+          className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-[14px] text-suave focus-visible:outline-2 focus-visible:outline-rosa"
+        >
+          {visible ? <EyeOff aria-hidden size={20} /> : <Eye aria-hidden size={20} />}
+        </button>
+      </div>
     </div>
   );
 }
