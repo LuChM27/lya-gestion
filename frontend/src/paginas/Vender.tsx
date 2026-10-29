@@ -129,7 +129,13 @@ export default function Vender() {
       <button
         type="button"
         aria-label="Volver"
-        onClick={() => navegar(-1)}
+        onClick={() => {
+          // React Router guarda en idx la posición en el historial: 0 es la primera página de la pestaña
+          // (abierta desde un atajo o recargada), y entonces Volver lleva a Inicio.
+          const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+          if (idx > 0) navegar(-1);
+          else navegar("/");
+        }}
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-borde-campo bg-superficie text-tinta-media focus-visible:outline-2 focus-visible:outline-rosa"
       >
         <IconoVolver />
@@ -139,7 +145,14 @@ export default function Vender() {
     </header>
   );
 
-  if (catalogo === null) return error ? <p role="alert" className="font-bold text-error">{error}</p> : null;
+  if (catalogo === null) {
+    return (
+      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[18px]">
+        {encabezado}
+        {error && <p role="alert" className="font-bold text-error">{error}</p>}
+      </div>
+    );
+  }
   if (catalogo.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[18px]">

@@ -91,7 +91,7 @@ export default function Insumos() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] border-collapse text-sm">
               <thead>
-                <tr className="text-left text-[13px] text-suave">
+                <tr className="text-left text-[13px] text-suave [&>th]:py-2.5">
                   <th scope="col" className={`${CELDA} font-extrabold`}>Insumo</th>
                   <th scope="col" className={`${CELDA} text-right font-extrabold`}>Existencia</th>
                   <th scope="col" className={`${CELDA} text-right font-extrabold`}>Precio</th>

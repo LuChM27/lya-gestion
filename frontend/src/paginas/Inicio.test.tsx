@@ -20,6 +20,7 @@ const DATOS = {
     { tipo: "insumo", id: 5, nombre: "Hilo algodón rosa palo", detalle: "Quedan 2 conos · mínimo 2", estado: "por_agotarse" },
     { tipo: "producto", id: 7, nombre: "Bolso balde · Negro", detalle: "Quedan 1 · mínimo 2", estado: "bajo_minimo" },
   ],
+  por_revisar: { productos: 1, insumos: 1 },
 };
 
 test("inicio muestra las cifras del día, del mes y de la vitrina", async () => {
@@ -52,6 +53,7 @@ test("el primer día muestra ceros y todo en orden", async () => {
         ventas_mes: { total: 0, cantidad: 0, mes: "octubre" },
         vitrina: { piezas: 0, valor: 0 },
         avisos: [],
+        por_revisar: { productos: 0, insumos: 0 },
       },
     },
   });
@@ -66,4 +68,14 @@ test("varias ventas por canal", async () => {
   simularApi({ "GET /api/inicio": { cuerpo: { ...DATOS, ventas_hoy: { total: 220000, cantidad: 3, por_canal: { instagram: 2, presencial: 1 } } } } });
   montar();
   expect(await screen.findByText("3 ventas · 2 por Instagram, 1 en persona")).toBeInTheDocument();
+});
+
+test("los conteos usan el total aunque los avisos lleguen cortados en 5", async () => {
+  const aviso = (n: number) => ({ tipo: "insumo", id: n, nombre: `Hilo ${n}`, detalle: "Quedan 0", estado: "bajo_minimo" });
+  simularApi({
+    "GET /api/inicio": { cuerpo: { ...DATOS, avisos: [1, 2, 3, 4, 5].map(aviso), por_revisar: { productos: 3, insumos: 5 } } },
+  });
+  montar();
+  expect(await screen.findByText("Tienes 8 avisos para revisar.")).toBeInTheDocument();
+  expect(screen.getByText("3 por revisar")).toBeInTheDocument();
 });

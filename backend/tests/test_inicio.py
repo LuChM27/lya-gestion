@@ -55,3 +55,14 @@ def test_avisos_de_productos_primero_los_rojos(autenticado, vitrina):  # noqa: F
         ("Bolso balde · Rosa palo", "por_agotarse", "Quedan 3 · mínimo 3"),
     ]
     assert avisos[0]["tipo"] == "producto" and avisos[0]["id"] == vitrina["modelo"]["id"]
+
+
+def test_avisos_se_cortan_en_cinco_pero_los_conteos_son_completos(autenticado, vitrina):  # noqa: F811
+    for n in range(6):
+        crear_insumo(autenticado, nombre=f"Hilo {n}", stock_minimo=10)
+    autenticado.put(
+        f"/api/inventario/variantes/{vitrina['negro']}", json={"color": "Negro", "stock_minimo": 2}
+    )
+    datos = autenticado.get("/api/inicio").json()
+    assert len(datos["avisos"]) == 5
+    assert datos["por_revisar"] == {"productos": 1, "insumos": 6}

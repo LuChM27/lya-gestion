@@ -14,6 +14,7 @@ type DatosInicio = {
   ventas_mes: { total: number; cantidad: number; mes: string };
   vitrina: { piezas: number; valor: number };
   avisos: Aviso[];
+  por_revisar: { productos: number; insumos: number };
 };
 
 const ventas = (n: number) => `${n} ${n === 1 ? "venta" : "ventas"}`;
@@ -47,7 +48,9 @@ export default function Inicio() {
   }, []);
 
   const avisos = datos?.avisos ?? [];
-  const porAgotarse = avisos.filter((a) => a.tipo === "producto").length;
+  // Los avisos llegan cortados en 5; los conteos vienen completos en por_revisar.
+  const porAgotarse = datos?.por_revisar.productos ?? 0;
+  const pendientes = porAgotarse + (datos?.por_revisar.insumos ?? 0);
   return (
     <>
       <Encabezado
@@ -56,7 +59,7 @@ export default function Inicio() {
         subtitulo={
           datos && (
             <span className="hidden md:inline">
-              {avisos.length ? `Tienes ${avisos.length} ${avisos.length === 1 ? "aviso" : "avisos"} para revisar.` : "Todo está en orden por hoy."}
+              {pendientes ? `Tienes ${pendientes} ${pendientes === 1 ? "aviso" : "avisos"} para revisar.` : "Todo está en orden por hoy."}
             </span>
           )
         }

@@ -176,8 +176,8 @@ test("si alguien vendió lo último, recarga la vitrina y lo saca de la venta", 
 test("tres pasos numerados", async () => {
   api();
   montar();
-  expect(await screen.findByRole("heading", { level: 1, name: "Venta rápida" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { level: 2, name: "1. ¿Qué vendiste?" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 2, name: "1. ¿Qué vendiste?" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Venta rápida" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { level: 2, name: "2. ¿Por dónde te compró?" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { level: 2, name: "3. ¿Cómo te pagó?" })).toBeInTheDocument();
   expect(screen.getByText("3 toques")).toBeInTheDocument();
@@ -215,4 +215,27 @@ test("descuento y fecha están en Más opciones", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Más opciones" }));
   expect(screen.getByLabelText("Descuento (opcional)")).toBeInTheDocument();
   expect(screen.getByLabelText("Fecha")).toBeInTheDocument();
+});
+
+test("Volver sin historial lleva a Inicio", async () => {
+  api();
+  render(
+    <MemoryRouter initialEntries={["/vender"]}>
+      <Routes>
+        <Route path="/" element={<p>Pantalla de inicio</p>} />
+        <Route path="/vender" element={<Vender />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  await producto("Rosa palo");
+  await userEvent.click(screen.getByRole("button", { name: "Volver" }));
+  expect(await screen.findByText("Pantalla de inicio")).toBeInTheDocument();
+});
+
+test("si la vitrina no carga, igual se puede volver", async () => {
+  api({ "GET /api/ventas/catalogo": { estado: 500, cuerpo: { detail: "No se pudo cargar la vitrina." } } });
+  montar();
+  expect(await screen.findByText("No se pudo cargar la vitrina.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Volver" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Venta rápida" })).toBeInTheDocument();
 });

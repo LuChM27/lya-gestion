@@ -127,12 +127,14 @@ export default function Marco() {
       <MenuLateral ruta={pathname} />
       <div className={`md:ml-[264px] ${pantallaCompleta ? "" : "pb-[calc(110px+env(safe-area-inset-bottom))] md:pb-0"}`}>
         {!pantallaCompleta && (
-          <header className="flex h-12 items-center gap-2.5 px-5 pt-5 md:hidden">
-            <img src="/logo.webp" alt="" width={44} height={44} className="block h-11 w-11 rounded-full border-2 border-white shadow-logo-chico" />
-            <span className="font-titulo text-2xl font-semibold text-rosa-activo italic">L&amp;A</span>
-          </header>
+          <div className="px-5 pt-5 md:hidden">
+            <header className="flex h-12 items-center gap-2.5">
+              <img src="/logo.webp" alt="" width={44} height={44} className="block h-11 w-11 rounded-full border-2 border-white shadow-logo-chico" />
+              <span className="font-titulo text-2xl font-semibold text-rosa-activo italic">L&amp;A</span>
+            </header>
+          </div>
         )}
-        <main className={`${pantallaCompleta ? "px-5 pt-4" : "px-5 pt-6"} md:pt-9 md:pr-10 md:pb-12 md:pl-6`}>
+        <main className={`px-5 pt-4 md:pt-9 md:pr-10 md:pb-12 md:pl-6`}>
           <div className="flex max-w-[1120px] flex-col gap-4 md:gap-7">
             <Outlet />
           </div>
