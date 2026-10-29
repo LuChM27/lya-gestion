@@ -12,6 +12,7 @@ from app.config import Config
 from app.db import crear_motor
 from app.inventario import fotos, insumos, productos
 from app.inventario.existencias import ErrorInventario
+from app.ventas import comprobante, ventas
 from app.version import VERSION
 from app.web import registrar_web
 
@@ -35,6 +36,8 @@ def crear_app(config: Config) -> FastAPI:
     app.include_router(productos.router)
     app.include_router(insumos.router)
     app.include_router(fotos.router)
+    app.include_router(ventas.router)
+    app.include_router(comprobante.router)
 
     @app.exception_handler(ErrorInventario)
     async def error_de_inventario(_: Request, error: ErrorInventario) -> JSONResponse:
@@ -43,7 +46,9 @@ def crear_app(config: Config) -> FastAPI:
     @app.exception_handler(RequestValidationError)
     async def datos_invalidos(request: Request, error: RequestValidationError) -> JSONResponse:
         # La interfaz muestra detail como texto: en inventario va un mensaje en español.
-        if request.url.path.startswith(("/api/inventario", "/api/fotos")):
+        if request.url.path.startswith(
+            ("/api/inventario", "/api/fotos", "/api/ventas", "/api/cuentas", "/api/pedidos")
+        ):
             return JSONResponse({"detail": DATO_INVALIDO}, status_code=422)
         return JSONResponse({"detail": jsonable_encoder(error.errors())}, status_code=422)
 

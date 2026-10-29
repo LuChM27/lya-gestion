@@ -39,3 +39,44 @@ def test_movimiento_exige_variante_o_insumo(config_tmp):
         with pytest.raises(IntegrityError):
             s.commit()
     motor.dispose()
+
+
+def test_migracion_crea_tablas_de_ventas(config_tmp):
+    migrar(config_tmp)
+    motor = crear_motor(config_tmp)
+    inspector = inspect(motor)
+    tablas = set(inspector.get_table_names())
+    nuevas = {"cuenta", "categoria", "transaccion", "cliente", "pedido", "pedido_item", "pago"}
+    assert nuevas <= tablas
+    columnas = {c["name"] for c in inspector.get_columns("movimiento_inventario")}
+    assert "pedido_id" in columnas
+    motor.dispose()
+
+
+def test_datos_iniciales_de_ventas(config_tmp):
+    from sqlalchemy import select
+
+    from app.ventas.modelos import Categoria, Cliente, Cuenta
+
+    migrar(config_tmp)
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        assert sorted(s.scalars(select(Cuenta.nombre))) == ["Daviplata", "Efectivo", "Nequi"]
+        ventas = s.scalar(select(Categoria).where(Categoria.nombre == "Ventas"))
+        assert ventas is not None and ventas.tipo == "ingreso"
+        mostrador = s.scalars(select(Cliente).where(Cliente.es_mostrador)).all()
+        assert [c.nombre for c in mostrador] == ["Cliente de mostrador"]
+    motor.dispose()
+
+
+def test_migrar_dos_veces_no_duplica(config_tmp):
+    from sqlalchemy import func, select
+
+    from app.ventas.modelos import Cuenta
+
+    migrar(config_tmp)
+    migrar(config_tmp)
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        assert s.scalar(select(func.count()).select_from(Cuenta)) == 3
+    motor.dispose()

@@ -1,5 +1,6 @@
 """Existencias calculadas como suma de movimientos, conteos y estado de stock."""
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -102,6 +103,8 @@ def registrar_movimiento(
     nota: str | None = None,
     permitir_negativo: bool = False,
     unidad: str | None = None,
+    pedido_id: int | None = None,
+    fecha: datetime | None = None,
 ) -> MovimientoInventario:
     if tipo not in TIPOS:
         raise ValueError(f"Tipo de movimiento desconocido: {tipo}")
@@ -115,7 +118,10 @@ def registrar_movimiento(
         insumo_id=insumo_id,
         costo_unitario=costo_unitario,
         nota=nota,
+        pedido_id=pedido_id,
     )
+    if fecha is not None:
+        movimiento.fecha = fecha
     sesion.add(movimiento)
     sesion.flush()
     if cantidad < 0 and not permitir_negativo:
