@@ -3,7 +3,7 @@
 import unicodedata
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import delete, exists, select, true, update
 from sqlalchemy.orm import Session
 
@@ -27,12 +27,18 @@ from app.inventario.existencias import (
     existencias,
     registrar_movimiento,
 )
+from app.inventario.fotos import foto_existe
 from app.inventario.modelos import Modelo, MovimientoInventario, Variante
 
 router = APIRouter(prefix="/api/inventario", dependencies=[Depends(usuario_actual)])
 
 GRAVEDAD = {"bajo_minimo": 0, "por_agotarse": 1, "ok": 2}
 PIEZA_UNICA = "Una pieza única solo puede tener 1 unidad."
+
+
+def _revisar_foto(request: Request, foto: str | None) -> None:
+    if not foto_existe(request.app.state.config.data_dir, foto):
+        raise ErrorInventario("Vuelve a subir la foto.")
 
 
 def sin_tildes(texto: str) -> str:
@@ -163,7 +169,8 @@ def listar_modelos(
 
 
 @router.post("/modelos", status_code=201)
-def crear_modelo(datos: ModeloEntrada, sesion: SesionDB) -> ModeloDetalle:
+def crear_modelo(datos: ModeloEntrada, sesion: SesionDB, request: Request) -> ModeloDetalle:
+    _revisar_foto(request, datos.foto)
     modelo = Modelo(**datos.model_dump())
     sesion.add(modelo)
     sesion.commit()
@@ -176,7 +183,10 @@ def ver_modelo(modelo_id: int, sesion: SesionDB) -> ModeloDetalle:
 
 
 @router.put("/modelos/{modelo_id}")
-def editar_modelo(modelo_id: int, datos: ModeloEntrada, sesion: SesionDB) -> ModeloDetalle:
+def editar_modelo(
+    modelo_id: int, datos: ModeloEntrada, sesion: SesionDB, request: Request
+) -> ModeloDetalle:
+    _revisar_foto(request, datos.foto)
     modelo = _modelo(sesion, modelo_id)
     for campo, valor in datos.model_dump().items():
         setattr(modelo, campo, valor)
@@ -199,7 +209,10 @@ def borrar_modelo(modelo_id: int, sesion: SesionDB) -> Response:
 
 
 @router.post("/modelos/{modelo_id}/variantes", status_code=201)
-def crear_variante(modelo_id: int, datos: VarianteEntrada, sesion: SesionDB) -> VarianteSalida:
+def crear_variante(
+    modelo_id: int, datos: VarianteEntrada, sesion: SesionDB, request: Request
+) -> VarianteSalida:
+    _revisar_foto(request, datos.foto)
     modelo = _modelo(sesion, modelo_id)
     _revisar_variante(sesion, modelo.id, datos, None)
     variante = Variante(modelo_id=modelo.id, sku=f"pendiente-{modelo.id}-{datos.color}"[:30])
@@ -217,7 +230,10 @@ def crear_variante(modelo_id: int, datos: VarianteEntrada, sesion: SesionDB) -> 
 
 
 @router.put("/variantes/{variante_id}")
-def editar_variante(variante_id: int, datos: VarianteEntrada, sesion: SesionDB) -> VarianteSalida:
+def editar_variante(
+    variante_id: int, datos: VarianteEntrada, sesion: SesionDB, request: Request
+) -> VarianteSalida:
+    _revisar_foto(request, datos.foto)
     variante = _variante(sesion, variante_id)
     _revisar_variante(sesion, variante.modelo_id, datos, variante.id)
     if datos.pieza_unica and existencia(sesion, variante_id=variante.id) > 1:

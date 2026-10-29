@@ -9,6 +9,8 @@ dependencies = [
     # 26.x ya no publica ruedas para Mac Intel; la Mac de la usuaria es x86_64.
     "argon2-cffi-bindings>=25.1,<26",
     "fastapi>=0.162.0",
+    "pillow>=13.0.0",
+    "python-multipart>=0.0.32",
     "rumps>=0.4.0 ; sys_platform == 'darwin'",
     "sqlalchemy>=2.1.6",
     "uvicorn>=0.54.0",
