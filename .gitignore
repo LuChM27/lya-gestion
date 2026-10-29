@@ -40,3 +40,6 @@ Thumbs.db
 # Datos de desarrollo
 datos-dev/
 respaldos-dev/
+
+# Paquetes armados
+build/
