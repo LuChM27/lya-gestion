@@ -9,7 +9,8 @@ export function simularApi(rutas: Record<string, Respuesta>) {
     "fetch",
     vi.fn(async (url: string, opciones: RequestInit = {}) => {
       const clave = `${opciones.method ?? "GET"} ${url}`;
-      llamadas.push({ clave, cuerpo: opciones.body ? JSON.parse(String(opciones.body)) : null });
+      const cuerpo = opciones.body instanceof FormData ? opciones.body : opciones.body ? JSON.parse(String(opciones.body)) : null;
+      llamadas.push({ clave, cuerpo });
       const r = rutas[clave] ?? { estado: 404, cuerpo: { detail: "No encontrado" } };
       if (r.demoraMs) await new Promise((listo) => setTimeout(listo, r.demoraMs));
       const estado = r.estado ?? 200;

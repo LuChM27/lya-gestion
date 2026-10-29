@@ -19,6 +19,10 @@ export function cantidad(n: number): string {
   return conDecimales(n, 3);
 }
 
+export function unidades(n: number): string {
+  return `${cantidad(n)} ${n === 1 ? "unidad" : "unidades"}`;
+}
+
 /** Lee lo que ella escribe: "12,5", "12.5", "1.200", "1.200,5" o "$ 125.000". */
 export function leerNumero(texto: string): number | null {
   const limpio = texto.replace(/[$\s ]/g, "");
