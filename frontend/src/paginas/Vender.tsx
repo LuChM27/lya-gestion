@@ -1,42 +1,45 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { enviar, ErrorApi, pedir } from "../api";
-import { Boton, Campo, MensajeError } from "../componentes/Formulario";
+import { Campo, MensajeError } from "../componentes/Formulario";
+import { IconoListo, IconoPersona, IconoVolver } from "../componentes/iconos";
+import { BotonPrincipal, Buscador, FotoProducto, Pastillas, Vacio } from "../componentes/ui";
 import { leerNumero, pesos } from "../formato";
-import { miniatura, NUMERO_INVALIDO } from "../inventario";
+import { NUMERO_INVALIDO } from "../inventario";
 import { CANALES, hoyBogota, recordado, recordar, sinTildes, type CatalogoItem, type Cuenta, type Venta } from "../ventas";
 
-const opcion = (activa: boolean) =>
-  `h-11 rounded-full border px-4 font-semibold focus-visible:outline-2 focus-visible:outline-rosa ${
-    activa ? "border-rosa bg-rosa text-white" : "border-borde bg-superficie"
-  }`;
+// docs/mockups/fuentes/venta-celular.html: tres pasos numerados y la franja fija con total y «Guardar venta».
+// Descuento y fecha no salen en el mockup: van guardados en «Más opciones».
 
-function Eleccion({ etiqueta, opciones, valor, alElegir }: { etiqueta: string; opciones: readonly (readonly [string, string])[]; valor: string; alElegir: (v: string) => void }) {
+function Paso({ numero, titulo, extra, children }: { numero: number; titulo: string; extra?: ReactNode; children: ReactNode }) {
   return (
-    <div className="mb-4">
-      <p className="mb-1 text-sm font-semibold">{etiqueta}</p>
-      <div role="group" aria-label={etiqueta} className="flex flex-wrap gap-2">
-        {opciones.map(([v, texto]) => (
-          <button key={v} type="button" aria-pressed={valor === v} onClick={() => alElegir(v)} className={opcion(valor === v)}>
-            {texto}
-          </button>
-        ))}
+    <section className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-extrabold">
+          <span className="text-rosa">{numero}.</span> {titulo}
+        </h2>
+        {extra}
       </div>
-    </div>
+      {children}
+    </section>
   );
 }
+
+const ENLACE = "text-[13px] font-extrabold text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-rosa";
 
 export default function Vender() {
   const navegar = useNavigate();
   const [catalogo, setCatalogo] = useState<CatalogoItem[] | null>(null);
   const [cuentas, setCuentas] = useState<Cuenta[]>([]);
   const [carrito, setCarrito] = useState<Record<number, number>>({});
+  const [buscando, setBuscando] = useState(false);
   const [buscar, setBuscar] = useState("");
   const [canal, setCanal] = useState(() => {
     const guardado = recordado("venta.canal");
     return CANALES.some(([v]) => v === guardado) ? guardado! : "presencial";
   });
   const [cuenta, setCuenta] = useState("");
+  const [opciones, setOpciones] = useState(false);
   const [descuento, setDescuento] = useState("");
   const hoy = hoyBogota();
   // null = hoy. Solo cambia si ella elige otro día: así una pantalla abierta desde ayer no fecha la venta en ayer.
@@ -60,9 +63,11 @@ export default function Vender() {
   const lineas = Object.entries(carrito)
     .map(([id, n]) => ({ item: porId.get(Number(id))!, n }))
     .filter((l) => l.item);
+  const unidades = lineas.reduce((suma, l) => suma + l.n, 0);
   const subtotal = lineas.reduce((suma, l) => suma + l.item.precio * l.n, 0);
   const valorDescuento = descuento.trim() ? leerNumero(descuento) : 0;
   const total = subtotal - (valorDescuento !== null && valorDescuento > 0 ? Math.round(valorDescuento) : 0);
+  const vacia = lineas.length === 0;
 
   function cambiar(item: CatalogoItem, delta: number) {
     setError("");
@@ -78,7 +83,7 @@ export default function Vender() {
   async function guardar(e: FormEvent) {
     e.preventDefault();
     if (enviando) return;
-    if (lineas.length === 0) return setError("Toca un producto para agregarlo a la venta.");
+    if (vacia) return setError("Toca un producto para agregarlo a la venta.");
     if (valorDescuento === null || valorDescuento < 0) return setError(NUMERO_INVALIDO);
     if (Math.round(valorDescuento) > subtotal) return setError("El descuento no puede ser mayor que el subtotal.");
     setEnviando(true);
@@ -119,18 +124,30 @@ export default function Vender() {
     }
   }
 
-  if (catalogo === null) return error ? <p role="alert" className="font-semibold text-error">{error}</p> : null;
+  const encabezado = (
+    <header className="flex h-12 items-center gap-3">
+      <button
+        type="button"
+        aria-label="Volver"
+        onClick={() => navegar(-1)}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-borde-campo bg-superficie text-tinta-media focus-visible:outline-2 focus-visible:outline-rosa"
+      >
+        <IconoVolver />
+      </button>
+      <h1 className="font-titulo text-[26px] font-semibold">Venta rápida</h1>
+      <span className="ml-auto rounded-full bg-rosa-claro px-2.5 py-[5px] text-xs font-extrabold text-rosa-oscuro">3 toques</span>
+    </header>
+  );
+
+  if (catalogo === null) return error ? <p role="alert" className="font-bold text-error">{error}</p> : null;
   if (catalogo.length === 0) {
     return (
-      <>
-        <h1 className="mb-4 text-2xl font-bold">Vender</h1>
-        <div className="rounded-2xl border border-dashed border-borde p-8 text-center">
-          <p className="mb-4 text-suave">No hay productos en vitrina.</p>
-          <Link to="/productos" className="inline-flex h-11 items-center font-semibold text-rosa-oscuro underline">
-            Ir a productos
-          </Link>
-        </div>
-      </>
+      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-[18px]">
+        {encabezado}
+        <Vacio texto="No hay productos en vitrina.">
+          <BotonPrincipal a="/productos">Ir a productos</BotonPrincipal>
+        </Vacio>
+      </div>
     );
   }
 
@@ -141,62 +158,65 @@ export default function Vender() {
   });
 
   return (
-    <form onSubmit={guardar} noValidate>
-      <h1 className="mb-4 text-2xl font-bold">Vender</h1>
-      <Campo etiqueta="Buscar" type="search" required={false} value={buscar} onChange={(e) => setBuscar(e.target.value)} />
-      <ul className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {visibles.map((i) => {
-          const enVenta = carrito[i.variante_id] ?? 0;
-          return (
-            <li key={i.variante_id}>
+    <form onSubmit={guardar} noValidate className="mx-auto flex w-full max-w-[720px] flex-col gap-[18px] pb-[calc(170px+env(safe-area-inset-bottom))] md:pb-0">
+      {encabezado}
+
+      <Paso
+        numero={1}
+        titulo="¿Qué vendiste?"
+        extra={
+          <button type="button" aria-expanded={buscando} onClick={() => setBuscando((b) => !b)} className={ENLACE}>
+            Buscar
+          </button>
+        }
+      >
+        {buscando && <Buscador valor={buscar} alCambiar={setBuscar} placeholder="Modelo, color o código" />}
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {visibles.map((i) => {
+            const enVenta = carrito[i.variante_id] ?? 0;
+            return (
               <button
+                key={i.variante_id}
                 type="button"
+                aria-pressed={enVenta > 0}
                 onClick={() => cambiar(i, 1)}
-                className={`flex w-full flex-col overflow-hidden rounded-2xl border bg-superficie text-left focus-visible:outline-2 focus-visible:outline-rosa ${
-                  enVenta ? "border-rosa ring-2 ring-rosa" : "border-borde hover:border-rosa"
+                className={`relative flex flex-col gap-2 rounded-[20px] border-2 bg-superficie px-2 pt-2 pb-3 text-left text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
+                  enVenta ? "border-rosa shadow-elegida" : "border-borde"
                 }`}
               >
-                {i.foto ? (
-                  <img src={miniatura(i.foto)} alt="" className="aspect-square w-full object-cover" />
-                ) : (
-                  <span aria-hidden className="aspect-square w-full bg-rosa-palo/40" />
-                )}
-                <span className="p-2">
-                  <span className="block truncate font-bold">{i.nombre}</span>{" "}
-                  <span className="block truncate text-sm">{i.color}</span>{" "}
-                  <span className="block font-semibold">{pesos(i.precio)}</span>{" "}
-                  <span className="block text-sm text-suave">{`${i.existencia} en vitrina`}</span>
-                  {enVenta > 0 && <span className="block text-sm font-bold text-rosa-oscuro">{` ${enVenta} en la venta`}</span>}
+                <FotoProducto foto={i.foto} categoria={i.categoria} nombre={i.nombre} className="h-[78px] rounded-[14px]" icono={34} />
+                <span className="flex flex-col gap-px px-1">
+                  <span className="line-clamp-2 text-[13px] leading-[1.25] font-extrabold">{i.nombre}</span>{" "}
+                  <span className="text-[13px] font-bold text-tinta-media">{i.color}</span>{" "}
+                  <span className="text-[13px] font-bold text-suave">{pesos(i.precio)}</span>{" "}
+                  <span className="text-xs text-suave">{`${i.existencia} en vitrina`}</span>
                 </span>
+                {enVenta > 0 && (
+                  <span aria-hidden className="absolute top-3.5 right-3.5 flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-white bg-rosa text-xs font-extrabold text-white">
+                    {enVenta === 1 ? <IconoListo tamano={14} /> : enVenta}
+                  </span>
+                )}
               </button>
-            </li>
-          );
-        })}
-      </ul>
-      {aviso && (
-        <p role="alert" className="mb-4 font-semibold text-error">
-          {aviso}
-        </p>
-      )}
-      <section aria-label="Venta" className="mb-4 rounded-2xl border border-borde bg-superficie p-4">
-        <h2 className="mb-3 text-lg font-bold">Venta</h2>
-        {lineas.length === 0 ? (
-          <p className="mb-4 text-suave">Toca un producto para agregarlo.</p>
-        ) : (
-          <ul className="mb-4 divide-y divide-borde">
+            );
+          })}
+        </div>
+        {aviso && (
+          <p role="alert" className="text-sm font-bold text-error">
+            {aviso}
+          </p>
+        )}
+        {lineas.length > 0 && (
+          <ul aria-label="En esta venta" className="flex flex-col gap-2">
             {lineas.map(({ item, n }) => {
               const nombre = `${item.nombre} ${item.color}`;
               return (
-                <li key={item.variante_id} className="flex items-center gap-2 py-2">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{`${item.nombre} · ${item.color}`}</span>
-                    <span className="text-sm text-suave">{pesos(item.precio * n)}</span>
-                  </span>
-                  <button type="button" aria-label={`Quitar uno de ${nombre}`} onClick={() => cambiar(item, -1)} className="h-11 w-11 rounded-lg border border-borde text-xl font-bold">
+                <li key={item.variante_id} className="flex items-center gap-2 rounded-[18px] border border-borde bg-superficie py-1.5 pr-1.5 pl-3.5">
+                  <span className="min-w-0 flex-1 truncate text-sm font-extrabold">{`${item.nombre} · ${item.color}`}</span>
+                  <button type="button" aria-label={`Quitar uno de ${nombre}`} onClick={() => cambiar(item, -1)} className="h-11 w-11 rounded-full border-[1.5px] border-borde-campo text-xl font-extrabold text-tinta-media">
                     −
                   </button>
-                  <span className="w-6 text-center font-bold">{n}</span>
-                  <button type="button" aria-label={`Agregar uno de ${nombre}`} onClick={() => cambiar(item, 1)} className="h-11 w-11 rounded-lg border border-borde text-xl font-bold">
+                  <span className="w-6 text-center font-extrabold">{n}</span>
+                  <button type="button" aria-label={`Agregar uno de ${nombre}`} onClick={() => cambiar(item, 1)} className="h-11 w-11 rounded-full border-[1.5px] border-borde-campo text-xl font-extrabold text-tinta-media">
                     +
                   </button>
                 </li>
@@ -204,15 +224,53 @@ export default function Vender() {
             })}
           </ul>
         )}
-        <Eleccion etiqueta="Canal" opciones={CANALES} valor={canal} alElegir={setCanal} />
-        <Eleccion etiqueta="Pagó en" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={setCuenta} />
-        <Campo etiqueta="Descuento (opcional)" inputMode="numeric" required={false} value={descuento} onChange={(e) => { setDescuento(e.target.value); setError(""); }} />
-        <Campo etiqueta="Fecha" type="date" max={hoy} value={fecha ?? hoy} onChange={(e) => setFecha(e.target.value || null)} />
-        <MensajeError texto={error} />
-      </section>
-      <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 md:bottom-4">
-        <Boton type="submit" disabled={enviando}>{`Guardar venta ${pesos(Math.max(total, 0))}`}</Boton>
+      </Paso>
+
+      <Paso numero={2} titulo="¿Por dónde te compró?">
+        <Pastillas etiqueta="Canal" opciones={CANALES} valor={canal} alElegir={setCanal} />
+      </Paso>
+
+      <Paso numero={3} titulo="¿Cómo te pagó?">
+        <Pastillas etiqueta="Pagó en" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={setCuenta} />
+      </Paso>
+
+      <div>
+        <button type="button" aria-expanded={opciones} onClick={() => setOpciones((o) => !o)} className={`${ENLACE} h-11`}>
+          Más opciones
+        </button>
+        {opciones && (
+          <div className="mt-2 grid gap-x-4 sm:grid-cols-2">
+            <Campo etiqueta="Descuento (opcional)" inputMode="numeric" required={false} value={descuento} onChange={(e) => { setDescuento(e.target.value); setError(""); }} />
+            <Campo etiqueta="Fecha" type="date" max={hoy} value={fecha ?? hoy} onChange={(e) => setFecha(e.target.value || null)} />
+          </div>
+        )}
       </div>
+
+      <section
+        aria-label="Total"
+        className="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-3 rounded-t-[28px] bg-superficie px-5 pt-4 pb-[max(22px,env(safe-area-inset-bottom))] shadow-franja md:sticky md:bottom-4 md:rounded-[28px] md:pb-5"
+      >
+        <MensajeError texto={error} />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[13px] font-bold text-suave">{vacia ? "Nada elegido aún" : unidades === 1 ? "1 producto" : `${unidades} productos`}</span>
+            <span className="text-[26px] font-extrabold tracking-[-0.01em]">{pesos(Math.max(total, 0))}</span>
+          </div>
+          <span className="flex items-center gap-1.5 rounded-full bg-rosa-claro px-3 py-2 text-[13px] font-extrabold text-rosa-oscuro">
+            <IconoPersona tamano={16} />
+            Cliente de mostrador
+          </span>
+        </div>
+        <button
+          type="submit"
+          disabled={vacia || enviando}
+          className={`h-14 rounded-full text-[17px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
+            vacia ? "bg-borde text-apagado" : "bg-rosa text-white shadow-boton-grande"
+          }`}
+        >
+          {vacia ? "Elige un producto" : "Guardar venta"}
+        </button>
+      </section>
     </form>
   );
 }
