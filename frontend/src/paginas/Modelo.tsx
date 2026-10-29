@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { actualizar, borrar, enviar, ErrorApi, pedir } from "../api";
 import AccionCantidad from "../componentes/AccionCantidad";
 import Archivar from "../componentes/Archivar";
-import Estado from "../componentes/Estado";
+import { Etiqueta } from "../componentes/ui";
 import { Boton, BotonSecundario, Campo, Casilla, MensajeError } from "../componentes/Formulario";
 import FormularioModelo from "../componentes/FormularioModelo";
 import Historial from "../componentes/Historial";
@@ -37,7 +37,7 @@ function TarjetaVariante({ variante, alCambiar }: { variante: Variante; alCambia
         </div>
         <div className="text-right">
           <p className="font-bold">{unidades(variante.existencia)}</p>
-          <Estado estado={variante.estado} />
+          <Etiqueta estado={variante.estado} />
         </div>
       </div>
       {!variante.activo && (
@@ -214,7 +214,7 @@ export default function Modelo() {
               {categoria} · {pesos(modelo.precio_venta)} · {cantidad(modelo.horas_tejido)} h de tejido
             </p>
             <p className="mt-1 flex items-center gap-2">
-              {unidades(modelo.unidades)} <Estado estado={modelo.estado} />
+              {unidades(modelo.unidades)} <Etiqueta estado={modelo.estado} />
             </p>
             {!modelo.activo && <p className="mt-1 font-semibold text-suave">Archivado</p>}
           </div>

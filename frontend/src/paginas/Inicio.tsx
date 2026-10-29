@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { pedir } from "../api";
 import AccesoCelular from "../componentes/AccesoCelular";
-import type { EstadoStock } from "../componentes/Estado";
+import type { EstadoStock } from "../componentes/ui";
 import { Boton } from "../componentes/Formulario";
 import { pesos } from "../formato";
 import type { DiaVentas } from "../ventas";

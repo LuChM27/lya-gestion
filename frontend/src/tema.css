@@ -2,42 +2,68 @@
 @import "@fontsource/nunito/400.css";
 @import "@fontsource/nunito/600.css";
 @import "@fontsource/nunito/700.css";
+@import "@fontsource/nunito/800.css";
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/600-italic.css";
 
-/* Paleta tomada del logo de L&A Tejidos (docs/arquitectura.md). */
+/* Paleta y formas tomadas de docs/mockups/mockups.html (ver .claude/skills/diseno-lya). */
 @theme {
   --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-titulo: "Fraunces", Georgia, serif;
   --color-rosa: #d9487e;
-  --color-rosa-oscuro: #b8355f;
+  --color-rosa-oscuro: #b83467;
+  --color-rosa-claro: #fbeaf2;
   --color-rosa-palo: #e8afcb;
   --color-menta: #5dbfa3;
   --color-dorado: #c9a227;
   --color-tinta: #1f1a1d;
+  --color-tinta-media: #4a3d44;
   --color-fondo: #fff8fb;
   --color-superficie: #ffffff;
-  --color-borde: #ecd9e2;
-  --color-suave: #6b5c63;
+  --color-borde: #f6e6ee;
+  --color-suave: #6e5f67;
   --color-error: #b3261e;
-  --color-alerta: #8a6100;
-  --color-alerta-fondo: #fdf1c7;
-  --color-peligro: #b3261e;
-  --color-peligro-fondo: #fde2e0;
+  --color-ok: #2e7d67;
+  --color-ok-fondo: #e3f5ef;
+  --color-alerta: #8a6a0a;
+  --color-alerta-fondo: #fbf3dc;
+  --color-peligro: #b42345;
+  --color-peligro-fondo: #fce4ea;
   --color-sobre-peligro: #ffffff;
+  --color-lila: #5b4a7a;
+  --color-lila-fondo: #efe8f6;
+  --color-elegido: #1f1a1d;
+  --color-sobre-elegido: #ffffff;
+  --shadow-tarjeta: 0 8px 24px rgb(217 72 126 / 0.07);
+  --shadow-boton: 0 10px 24px rgb(217 72 126 / 0.28);
+  --shadow-elegida: 0 8px 20px rgb(217 72 126 / 0.18);
 }
 
+/* Oscuro: mismos nombres; la pastilla elegida se invierte para no perderse en el fondo. */
 @media (prefers-color-scheme: dark) {
   :root {
+    --color-rosa-oscuro: #f08bb3;
+    --color-rosa-claro: #3a2330;
+    --color-rosa-palo: #5a2f43;
+    --color-dorado: #e0bf4a;
     --color-tinta: #f6eef2;
+    --color-tinta-media: #e0d2d9;
     --color-fondo: #1b1418;
     --color-superficie: #261d22;
     --color-borde: #3d2f36;
     --color-suave: #c4b3bb;
-    --color-rosa-palo: #5a2f43;
     --color-error: #ff8a80;
+    --color-ok: #7fd8bd;
+    --color-ok-fondo: #1e3a32;
     --color-alerta: #f5cf6b;
     --color-alerta-fondo: #3d3214;
-    --color-peligro: #ff8a80;
-    --color-peligro-fondo: #4a1f1c;
+    --color-peligro: #ff8a95;
+    --color-peligro-fondo: #4a1f26;
     --color-sobre-peligro: #1b1418;
+    --color-lila: #cbb8ea;
+    --color-lila-fondo: #2f2840;
+    --color-elegido: #f6eef2;
+    --color-sobre-elegido: #1b1418;
   }
 }
 

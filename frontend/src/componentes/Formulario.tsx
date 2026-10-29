@@ -22,7 +22,7 @@ export function Campo({ etiqueta, ...props }: { etiqueta: string } & InputHTMLAt
       <input
         id={id}
         required
-        className="h-11 w-full rounded-lg border border-borde bg-fondo px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-rosa"
+        className="h-12 w-full rounded-[14px] border border-borde bg-superficie px-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-rosa"
         {...props}
       />
     </div>
@@ -32,7 +32,7 @@ export function Campo({ etiqueta, ...props }: { etiqueta: string } & InputHTMLAt
 export function Boton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className="h-11 w-full rounded-lg bg-rosa px-4 font-bold text-white hover:bg-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60"
+      className="h-12 w-full rounded-full bg-rosa px-6 font-extrabold text-white shadow-boton hover:bg-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60"
       {...props}
     >
       {children}
@@ -44,7 +44,7 @@ export function BotonSecundario({ children, className = "", ...props }: React.Bu
   return (
     <button
       type="button"
-      className={`h-11 rounded-lg border border-borde bg-superficie px-4 font-semibold hover:bg-rosa-palo/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60 ${className}`}
+      className={`h-11 rounded-full border border-borde bg-superficie px-5 font-bold text-rosa-oscuro hover:border-rosa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60 ${className}`}
       {...props}
     >
       {children}
@@ -65,7 +65,7 @@ export function Selector({
       </label>
       <select
         id={id}
-        className="h-11 w-full rounded-lg border border-borde bg-fondo px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-rosa"
+        className="h-12 w-full rounded-[14px] border border-borde bg-superficie px-4 text-base outline-none focus-visible:ring-2 focus-visible:ring-rosa"
         {...props}
       >
         {opciones.map(([valor, texto]) => (

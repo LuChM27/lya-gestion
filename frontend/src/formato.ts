@@ -69,3 +69,12 @@ const HORA = new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour
 export function hora(iso: string): string {
   return HORA.format(new Date(iso));
 }
+
+const LARGA = new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", weekday: "long", day: "numeric", month: "long" });
+
+/** Fecha del encabezado en hora de Bogotá: «Jueves, 29 de octubre». */
+export function fechaLarga(iso: string): string {
+  const partes = Object.fromEntries(LARGA.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  const dia = partes.weekday ?? "";
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)}, ${partes.day} de ${partes.month}`;
+}

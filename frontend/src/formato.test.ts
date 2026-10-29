@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { cantidad, fecha, leerNumero, pesos } from "./formato";
+import { cantidad, fecha, fechaLarga, leerNumero, pesos } from "./formato";
 
 test.each([
   ["12,5", 12.5],
@@ -34,4 +34,9 @@ test("cantidad con coma decimal y sin ceros sobrantes", () => {
 test("fecha en Bogotá como DD/MM/AAAA", () => {
   expect(fecha("2026-10-29T03:00:00Z")).toBe("28/10/2026");
   expect(fecha("2026-01-05T15:00:00Z")).toBe("05/01/2026");
+});
+
+test("fecha larga en Bogotá con día de la semana", () => {
+  expect(fechaLarga("2026-10-29T15:00:00Z")).toBe("Jueves, 29 de octubre");
+  expect(fechaLarga("2026-10-30T03:00:00Z")).toBe("Jueves, 29 de octubre");
 });

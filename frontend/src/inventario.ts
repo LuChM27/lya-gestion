@@ -1,4 +1,4 @@
-import type { EstadoStock } from "./componentes/Estado";
+import type { EstadoStock } from "./componentes/ui";
 
 export type Variante = {
   id: number;

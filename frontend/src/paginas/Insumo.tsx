@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { actualizar, borrar, enviar, ErrorApi, pedir } from "../api";
 import AccionCantidad from "../componentes/AccionCantidad";
 import Archivar from "../componentes/Archivar";
-import Estado from "../componentes/Estado";
+import { Etiqueta } from "../componentes/ui";
 import { Boton, BotonSecundario, Campo, Selector } from "../componentes/Formulario";
 import FormularioInsumo from "../componentes/FormularioInsumo";
 import Historial from "../componentes/Historial";
@@ -133,7 +133,7 @@ export default function Insumo() {
             </p>
             <p className="mt-1 flex flex-wrap items-center gap-2">
               <span className="font-bold">{`${cantidad(insumo.existencia)} ${insumo.unidad}`}</span>
-              <Estado estado={insumo.estado} />
+              <Etiqueta estado={insumo.estado} />
               <span className="text-sm text-suave">{`mínimo ${cantidad(insumo.stock_minimo)}`}</span>
             </p>
             {insumo.precio_unitario !== null && <p className="text-suave">{`${precio(insumo.precio_unitario)} por unidad`}</p>}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { enviar, ErrorApi, pedir } from "../api";
-import Estado from "../componentes/Estado";
+import { Etiqueta } from "../componentes/ui";
 import { Boton, BotonSecundario, Campo } from "../componentes/Formulario";
 import FormularioInsumo from "../componentes/FormularioInsumo";
 import { cantidad, precio } from "../formato";
@@ -110,7 +110,7 @@ export default function Insumos() {
               <span className="block truncate font-bold">{i.nombre}</span>
               <span className="flex flex-wrap items-center gap-2 text-sm">
                 <span>{`${cantidad(i.existencia)} ${i.unidad}`}</span>
-                <Estado estado={i.estado} />
+                <Etiqueta estado={i.estado} />
               </span>
               {i.precio_unitario !== null && (
                 <span className="block text-sm text-suave">{`${precio(i.precio_unitario)} por unidad`}</span>

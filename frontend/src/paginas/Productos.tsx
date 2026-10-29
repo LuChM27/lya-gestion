@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { enviar, ErrorApi, pedir } from "../api";
-import Estado from "../componentes/Estado";
+import { Etiqueta } from "../componentes/ui";
 import { Boton, BotonSecundario, Campo } from "../componentes/Formulario";
 import FormularioModelo from "../componentes/FormularioModelo";
 import { pesos, unidades } from "../formato";
@@ -119,7 +119,7 @@ export default function Productos() {
                 <span className="block text-sm text-suave">{pesos(m.precio_venta)}</span>
                 <span className="flex flex-wrap items-center gap-2 text-sm">
                   <span>{unidades(m.unidades)}</span>
-                  <Estado estado={m.estado} />
+                  <Etiqueta estado={m.estado} />
                 </span>
               </span>
             </Link>
