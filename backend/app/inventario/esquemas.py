@@ -84,3 +84,55 @@ class MovimientoSalida(BaseModel):
     tipo: str
     cantidad: Numero
     nota: str | None
+
+
+TipoInsumo = Literal["hilo", "cuentas", "herraje", "forro", "argolla", "empaque", "otro"]
+Unidad = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=20)]
+Precio = Annotated[Decimal, Field(ge=0, max_digits=12, decimal_places=2)]
+
+
+class InsumoEntrada(BaseModel):
+    nombre: Texto
+    tipo: TipoInsumo
+    unidad: Unidad
+    unidad_compra: Unidad | None = None
+    factor_compra: CantidadPositiva | None = None
+    stock_minimo: Cantidad = Decimal(0)
+    proveedor: Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)] | None = (
+        None
+    )
+    precio_unitario: Precio | None = None
+
+
+class EntradaInsumo(BaseModel):
+    cantidad: CantidadPositiva
+    en_unidad_compra: bool = False
+    precio_unitario: Precio | None = None
+    nota: TextoOpcional = None
+
+
+class MermaInsumo(BaseModel):
+    tipo: Literal["merma"]
+    cantidad: CantidadPositiva
+    nota: TextoOpcional = None
+
+
+class InsumoSalida(BaseModel):
+    id: int
+    nombre: str
+    tipo: str
+    unidad: str
+    unidad_compra: str | None
+    factor_compra: Numero | None
+    stock_minimo: Numero
+    proveedor: str | None
+    activo: bool
+    precio_unitario: Numero | None
+    existencia: Numero
+    estado: Estado
+
+
+class PrecioSalida(BaseModel):
+    precio_unitario: Numero
+    desde: FechaUTC
+    origen: str
