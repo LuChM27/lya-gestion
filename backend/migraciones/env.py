@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 
 from app.inventario import modelos as _inventario  # noqa: F401  (registra las tablas)
 from app.modelos import Base
+from app.ventas import modelos as _ventas  # noqa: F401
 
 url = context.config.attributes.get("url") or context.config.get_main_option("sqlalchemy.url")
 

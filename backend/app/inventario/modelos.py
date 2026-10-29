@@ -89,3 +89,4 @@ class MovimientoInventario(Base):
     nota: Mapped[str | None] = mapped_column(String(200))
     variante_id: Mapped[int | None] = mapped_column(ForeignKey("variante.id"), index=True)
     insumo_id: Mapped[int | None] = mapped_column(ForeignKey("insumo.id"), index=True)
+    pedido_id: Mapped[int | None] = mapped_column(ForeignKey("pedido.id"), index=True)

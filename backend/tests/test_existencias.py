@@ -165,3 +165,21 @@ def test_dos_mermas_a_la_vez_no_dejan_negativo(config_tmp):
         assert existencia(s, insumo_id=insumo_id) == 0
     assert len(errores) == 1
     motor.dispose()
+
+
+def test_movimiento_guarda_el_pedido(s, variante):
+    from app.ventas.modelos import Cliente, Pedido
+
+    cliente = Cliente(nombre="Cliente de prueba")
+    s.add(cliente)
+    s.flush()
+    p = Pedido(
+        canal="presencial", tipo="inmediata", estado="entregado", cliente_id=cliente.id, total=0
+    )
+    s.add(p)
+    s.flush()
+    registrar_movimiento(s, tipo="ingreso_vitrina", cantidad=Decimal(2), variante_id=variante.id)
+    m = registrar_movimiento(
+        s, tipo="venta", cantidad=Decimal(-1), variante_id=variante.id, pedido_id=p.id
+    )
+    assert m.pedido_id == p.id

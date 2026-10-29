@@ -102,6 +102,7 @@ def registrar_movimiento(
     nota: str | None = None,
     permitir_negativo: bool = False,
     unidad: str | None = None,
+    pedido_id: int | None = None,
 ) -> MovimientoInventario:
     if tipo not in TIPOS:
         raise ValueError(f"Tipo de movimiento desconocido: {tipo}")
@@ -115,6 +116,7 @@ def registrar_movimiento(
         insumo_id=insumo_id,
         costo_unitario=costo_unitario,
         nota=nota,
+        pedido_id=pedido_id,
     )
     sesion.add(movimiento)
     sesion.flush()
