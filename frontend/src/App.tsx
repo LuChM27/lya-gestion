@@ -47,7 +47,7 @@ function Protegida() {
       return (
         <Routes>
           <Route element={<Marco />}>
-            <Route index element={<Inicio usuario={sesion.usuario} />} />
+            <Route index element={<Inicio />} />
             <Route path="vender" element={<Vender />} />
             <Route path="ventas" element={<Ventas />} />
             <Route path="ventas/:id" element={<Venta />} />

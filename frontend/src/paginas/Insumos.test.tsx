@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { expect, test } from "vitest";
 import { simularApi } from "../pruebas/simular";
-import Inicio from "./Inicio";
 import Insumo from "./Insumo";
 import Insumos from "./Insumos";
 
@@ -11,7 +10,6 @@ function montar(ruta: string) {
   return render(
     <MemoryRouter initialEntries={[ruta]}>
       <Routes>
-        <Route path="/" element={<Inicio usuario="laura" />} />
         <Route path="/insumos" element={<Insumos />} />
         <Route path="/insumos/:id" element={<Insumo />} />
       </Routes>
@@ -142,25 +140,6 @@ test("historial de precios muestra el origen", async () => {
   expect(await screen.findByText("Compra")).toBeInTheDocument();
   expect(screen.getByText("Editado")).toBeInTheDocument();
   expect(screen.getByText("$ 27,50")).toBeInTheDocument();
-});
-
-test("inicio cuenta lo que está por revisar", async () => {
-  simularApi({
-    "GET /api/inventario/modelos": { cuerpo: [{ estado: "ok" }, { estado: "por_agotarse" }] },
-    "GET /api/inventario/insumos": { cuerpo: [{ estado: "bajo_minimo" }, { estado: "por_agotarse" }, { estado: "ok" }] },
-  });
-  montar("/");
-  expect(await screen.findByRole("link", { name: "2 insumos por revisar" })).toHaveAttribute("href", "/insumos");
-  expect(screen.getByRole("link", { name: "1 producto por revisar" })).toHaveAttribute("href", "/productos");
-});
-
-test("inicio sin pendientes", async () => {
-  simularApi({
-    "GET /api/inventario/modelos": { cuerpo: [{ estado: "ok" }] },
-    "GET /api/inventario/insumos": { cuerpo: [] },
-  });
-  montar("/");
-  expect(await screen.findByText("Todo el inventario está en orden.")).toBeInTheDocument();
 });
 
 test("insumo archivado se vuelve a usar", async () => {

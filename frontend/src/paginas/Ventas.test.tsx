@@ -4,7 +4,6 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { expect, test } from "vitest";
 import { simularApi } from "../pruebas/simular";
 import { hoyBogota } from "../ventas";
-import Inicio from "./Inicio";
 import Venta from "./Venta";
 import Ventas from "./Ventas";
 
@@ -14,7 +13,6 @@ function montar(ruta: Entrada) {
   return render(
     <MemoryRouter initialEntries={[ruta]}>
       <Routes>
-        <Route path="/" element={<Inicio usuario="laura" />} />
         <Route path="/ventas" element={<Ventas />} />
         <Route path="/ventas/:id" element={<Venta />} />
       </Routes>
@@ -92,12 +90,6 @@ test("venta recién guardada lo dice", async () => {
   montar({ pathname: "/ventas/12", state: { guardada: true } });
   expect(await screen.findByRole("status")).toHaveTextContent("Venta guardada");
   expect(screen.getByRole("link", { name: "Nueva venta" })).toHaveAttribute("href", "/vender");
-});
-
-test("inicio muestra las ventas de hoy", async () => {
-  simularApi({ "GET /api/ventas": { cuerpo: { dia: hoy, ventas: [VENTA], total: 240000, cantidad: 1 } } });
-  montar("/");
-  expect(await screen.findByRole("link", { name: "Ventas de hoy: $ 240.000 (1)" })).toHaveAttribute("href", "/ventas");
 });
 
 test("doble toque en Anular envía una sola anulación", async () => {

@@ -1,75 +1,105 @@
+import { ChevronRight, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { pedir } from "../api";
-import type { EstadoStock } from "../componentes/ui";
+import { ErrorApi, pedir } from "../api";
+import { BotonPrincipal, Encabezado, TarjetaCifra, Titulo, type EstadoStock } from "../componentes/ui";
 import { pesos } from "../formato";
-import type { DiaVentas } from "../ventas";
+import { nombreCanal } from "../ventas";
 
-type Pendientes = { productos: number; insumos: number };
+// Diseño de «Inicio · Mac» e «Inicio · Celular». Ganancia, por cobrar y la gráfica llegan con sus módulos.
+type Aviso = { tipo: "producto" | "insumo"; id: number; nombre: string; detalle: string; estado: EstadoStock };
+type DatosInicio = {
+  ventas_hoy: { total: number; cantidad: number; por_canal: Record<string, number> };
+  ventas_mes: { total: number; cantidad: number; mes: string };
+  vitrina: { piezas: number; valor: number };
+  avisos: Aviso[];
+};
 
-const porRevisar = (lista: { estado: EstadoStock }[]) => lista.filter((x) => x.estado !== "ok").length;
+const ventas = (n: number) => `${n} ${n === 1 ? "venta" : "ventas"}`;
 
-function VentasDeHoy() {
-  const [hoy, setHoy] = useState<DiaVentas | null>(null);
-
-  useEffect(() => {
-    pedir<DiaVentas>("/api/ventas")
-      .then(setHoy)
-      .catch(() => setHoy(null)); // opcional, como el resumen de inventario
-  }, []);
-
-  if (!hoy) return null;
-  return (
-    <Link
-      to="/ventas"
-      className="mb-4 flex min-h-11 items-center rounded-2xl border border-borde bg-superficie p-4 font-bold focus-visible:outline-2 focus-visible:outline-rosa"
-    >
-      {`Ventas de hoy: ${pesos(hoy.total)} (${hoy.cantidad})`}
-    </Link>
-  );
+function porCanal(canales: Record<string, number>): string {
+  return Object.entries(canales)
+    .sort((a, b) => b[1] - a[1])
+    .map(([canal, n]) => (canal === "presencial" ? `${n} en persona` : canal === "feria" ? `${n} en feria` : `${n} por ${nombreCanal(canal)}`))
+    .join(", ");
 }
 
-function Resumen() {
-  const [pendientes, setPendientes] = useState<Pendientes | null>(null);
+const PUNTO: Record<EstadoStock, string> = { bajo_minimo: "bg-peligro", por_agotarse: "bg-dorado", ok: "bg-ok" };
+const FONDO_PUNTO: Record<EstadoStock, string> = { bajo_minimo: "bg-peligro-fondo", por_agotarse: "bg-alerta-fondo", ok: "bg-ok-fondo" };
+
+export default function Inicio() {
+  const [datos, setDatos] = useState<DatosInicio | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      pedir<{ estado: EstadoStock }[]>("/api/inventario/modelos"),
-      pedir<{ estado: EstadoStock }[]>("/api/inventario/insumos"),
-    ])
-      .then(([modelos, insumos]) => setPendientes({ productos: porRevisar(modelos), insumos: porRevisar(insumos) }))
-      .catch(() => setPendientes(null)); // el resumen es opcional: si falla, Inicio sigue sirviendo
+    pedir<DatosInicio>("/api/inicio")
+      .then(setDatos)
+      .catch((err) => setError(err instanceof ErrorApi ? err.mensaje : String(err)));
   }, []);
 
-  if (!pendientes) return null;
-  if (pendientes.productos === 0 && pendientes.insumos === 0) {
-    return <p className="mb-6 rounded-2xl border border-borde bg-superficie p-4">Todo el inventario está en orden.</p>;
-  }
-  const tarjetas = [
-    { n: pendientes.productos, texto: pendientes.productos === 1 ? "1 producto por revisar" : `${pendientes.productos} productos por revisar`, a: "/productos" },
-    { n: pendientes.insumos, texto: pendientes.insumos === 1 ? "1 insumo por revisar" : `${pendientes.insumos} insumos por revisar`, a: "/insumos" },
-  ].filter((t) => t.n > 0);
-  return (
-    <div className="mb-6 grid gap-3 sm:grid-cols-2">
-      {tarjetas.map((t) => (
-        <Link
-          key={t.a}
-          to={t.a}
-          className="flex min-h-11 items-center rounded-2xl border border-alerta bg-alerta-fondo p-4 font-bold text-alerta focus-visible:outline-2 focus-visible:outline-rosa"
-        >
-          {t.texto}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-export default function Inicio({ usuario }: { usuario: string }) {
+  const hoy = datos?.ventas_hoy;
   return (
     <>
-      <h1 className="mb-6 text-2xl font-bold">Hola, {usuario}</h1>
-      <VentasDeHoy />
-      <Resumen />
+      <Encabezado
+        fecha
+        titulo="¡Hola de nuevo!"
+        subtitulo={datos && (datos.avisos.length ? `Tienes ${datos.avisos.length} ${datos.avisos.length === 1 ? "aviso" : "avisos"} para revisar.` : "Todo está en orden por hoy.")}
+        acciones={
+          <BotonPrincipal a="/vender" icono={Plus} className="hidden md:inline-flex">
+            Nueva venta
+          </BotonPrincipal>
+        }
+      />
+      {error && <p role="alert" className="mb-4 font-semibold text-error">{error}</p>}
+      {datos && hoy && (
+        <>
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="sm:col-span-2 lg:col-span-1">
+              <TarjetaCifra
+                tono="rosa"
+                titulo="Vendiste hoy"
+                cifra={pesos(hoy.total)}
+                detalle={hoy.cantidad ? `${ventas(hoy.cantidad)} · ${porCanal(hoy.por_canal)}` : "Aún no hay ventas hoy"}
+              />
+            </div>
+            <TarjetaCifra titulo={`Ventas de ${datos.ventas_mes.mes}`} cifra={pesos(datos.ventas_mes.total)} detalle={<span className="text-suave">{ventas(datos.ventas_mes.cantidad)}</span>} />
+            <TarjetaCifra
+              tono="suave"
+              titulo="En vitrina"
+              cifra={`${datos.vitrina.piezas} ${datos.vitrina.piezas === 1 ? "pieza" : "piezas"}`}
+              detalle={<span className="text-tinta-media">{`${pesos(datos.vitrina.valor)} a precio de venta`}</span>}
+            />
+          </div>
+          <section className="max-w-2xl">
+            <div className="mb-3">
+              <Titulo nivel={2}>Para no olvidar</Titulo>
+            </div>
+            {datos.avisos.length === 0 ? (
+              <p className="rounded-3xl border border-borde bg-superficie p-5 shadow-tarjeta">Todo el inventario está en orden.</p>
+            ) : (
+              <ul className="grid gap-3">
+                {datos.avisos.map((a) => (
+                  <li key={`${a.tipo}-${a.id}-${a.nombre}`}>
+                    <Link
+                      to={a.tipo === "insumo" ? `/insumos/${a.id}` : `/productos/${a.id}`}
+                      className="flex items-center gap-3 rounded-2xl border border-borde bg-superficie p-3 shadow-tarjeta hover:border-rosa focus-visible:outline-2 focus-visible:outline-rosa"
+                    >
+                      <span aria-hidden className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${FONDO_PUNTO[a.estado]}`}>
+                        <span className={`h-2.5 w-2.5 rounded-full ${PUNTO[a.estado]}`} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-extrabold">{a.nombre}</span>
+                        <span className="block text-sm text-suave">{a.detalle}</span>
+                      </span>
+                      <ChevronRight aria-hidden size={20} className="shrink-0 text-suave" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
     </>
   );
 }

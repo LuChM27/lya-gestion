@@ -68,7 +68,7 @@ test("con sesión el menú lleva al inventario", async () => {
     "GET /api/inventario/insumos": { cuerpo: [] },
   });
   montar();
-  expect(await screen.findByText("Hola, laura")).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: "¡Hola de nuevo!" })).toBeInTheDocument();
   const menu = within(screen.getByRole("navigation", { name: "Menú" }));
   expect(menu.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
   await userEvent.click(menu.getByRole("link", { name: "Inventario" }));
