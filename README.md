@@ -10,6 +10,7 @@ Es una aplicación web local que corre directamente en la MacBook Air de la due�
 
 - [Arquitectura del sistema](docs/arquitectura.md) — objetivos, módulos, reglas de negocio, modelo de datos, despliegue, seguridad y decisiones ([original .docx](docs/arquitectura.docx)).
 - [Mockups](docs/mockups/) — seis pantallas de referencia (Mac y celular).
+- [Probar en tu computador](docs/probar-en-local.md) — cómo arrancar la app en local, verla como en el celular y correr las pruebas.
 - [Logo](assets/logo/) — `logo-900.webp` (sin contacto, para la app e ícono) y `logo-contacto-1600.jpg` (con Instagram y WhatsApp, para el comprobante PDF).
 - [Archivos de despliegue](deploy/) — los LaunchAgents que se instalan en `~/Library/LaunchAgents`: `co.lyatejidos.gestion.plist` (el servicio) y `co.lyatejidos.menu.plist` (el ícono de la barra de menú).
 
