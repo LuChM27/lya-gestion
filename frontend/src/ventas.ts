@@ -48,6 +48,8 @@ export const CANALES = [
   ["tiktok", "TikTok"],
 ] as const;
 
+export const resumenItems = (v: Venta) => v.items.map((i) => `${i.modelo} · ${i.color} ×${i.cantidad}`).join(", ");
+
 export const nombreCanal = (canal: string) => CANALES.find(([valor]) => valor === canal)?.[1] ?? canal;
 
 /** Recuerda una preferencia en este dispositivo; si el navegador no deja, no pasa nada. */

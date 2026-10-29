@@ -4,6 +4,7 @@ import { enviar } from "../api";
 const SECCIONES = [
   { a: "/", texto: "Inicio" },
   { a: "/vender", texto: "Vender" },
+  { a: "/ventas", texto: "Ventas" },
   { a: "/productos", texto: "Productos" },
   { a: "/insumos", texto: "Insumos" },
 ];

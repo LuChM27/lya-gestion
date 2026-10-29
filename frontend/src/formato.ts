@@ -62,3 +62,10 @@ export function fecha(iso: string): string {
   const partes = Object.fromEntries(FECHA.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
   return `${partes.day}/${partes.month}/${partes.year}`;
 }
+
+const HORA = new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour: "numeric", minute: "2-digit" });
+
+/** Hora de Bogotá: «3:15 p. m.». */
+export function hora(iso: string): string {
+  return HORA.format(new Date(iso));
+}
