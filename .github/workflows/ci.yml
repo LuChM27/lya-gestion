@@ -13,7 +13,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv sync --frozen
       - run: uv run ruff check
       - run: uv run pytest -q
@@ -38,6 +38,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv run --project backend --with pillow pytest -q empaquetado/tests
       - run: shellcheck empaquetado/instalar.sh
