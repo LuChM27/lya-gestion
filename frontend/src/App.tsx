@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorApi, pedir } from "./api";
+import Clientes from "./paginas/Clientes";
 import CrearCuenta from "./paginas/CrearCuenta";
 import Entrar from "./paginas/Entrar";
 import Marco from "./componentes/Marco";
@@ -53,6 +54,8 @@ function Protegida() {
             <Route path="ventas/:id" element={<Venta />} />
             <Route path="inventario" element={<Navigate to="/productos" replace />} />
             <Route path="mas" element={<Mas />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="clientes/:id" element={<Clientes />} />
             <Route path="productos" element={<Productos />} />
             <Route path="productos/:id" element={<Modelo />} />
             <Route path="insumos" element={<Insumos />} />

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import AccesoCelular from "../componentes/AccesoCelular";
-import { IconoQr, IconoSalir, IconoSiguiente } from "../componentes/iconos";
+import { IconoClientes, IconoQr, IconoSalir, IconoSiguiente } from "../componentes/iconos";
 import { Titulo } from "../componentes/ui";
 import { useSalir } from "../sesion";
 
@@ -18,6 +19,16 @@ export default function Mas() {
     <>
       <Titulo>Más</Titulo>
       <div className="flex flex-col gap-2.5">
+        <Link to="/clientes" className={`${FILA} no-underline`}>
+          <span className={CUADRO}>
+            <IconoClientes />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-px">
+            <span className="text-sm font-extrabold">Clientes</span>
+            <span className="text-xs text-suave">Contactos e historial</span>
+          </span>
+          <IconoSiguiente tamano={16} className="shrink-0 text-flecha" />
+        </Link>
         <button type="button" className={FILA} aria-expanded={celular} onClick={() => setCelular((v) => !v)}>
           <span className={CUADRO}>
             <IconoQr />
