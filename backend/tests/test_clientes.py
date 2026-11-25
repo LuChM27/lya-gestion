@@ -1,8 +1,12 @@
+from datetime import UTC, datetime, timedelta
+
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import crear_motor
-from app.ventas.modelos import Cliente
+from app.ventas.modelos import Cliente, Pago, Pedido, PedidoItem
+from tests.test_productos import crear_modelo, crear_variante
 
 
 def crear_cliente(c, **datos):
@@ -117,3 +121,97 @@ def test_mostrador_no_se_toca(autenticado, config_tmp):
     ):
         assert r.status_code == 404
         assert r.json()["detail"] == "Esa clienta no existe."
+
+
+def pedido(
+    config,
+    cliente_id,
+    total,
+    canal="instagram",
+    estado="entregado",
+    pagado=None,
+    dias_atras=0,
+    variante_id=None,
+):
+    motor = crear_motor(config)
+    with Session(motor) as s:
+        p = Pedido(
+            fecha=datetime.now(UTC).replace(tzinfo=None) - timedelta(days=dias_atras),
+            canal=canal,
+            tipo="inmediata",
+            estado=estado,
+            cliente_id=cliente_id,
+            total=total,
+        )
+        s.add(p)
+        s.flush()
+        if variante_id is not None:
+            s.add(
+                PedidoItem(
+                    pedido_id=p.id, variante_id=variante_id, cantidad=1, precio_unitario=total
+                )
+            )
+        monto = total if pagado is None else pagado
+        if monto:
+            s.add(Pago(pedido_id=p.id, cuenta_id=2, monto=monto))
+        s.commit()
+        n = p.id
+    motor.dispose()
+    return n
+
+
+@pytest.fixture
+def rosa(autenticado) -> int:
+    m = crear_modelo(autenticado, nombre="Bolso balde", precio_venta=125000)
+    return crear_variante(autenticado, m["id"], color="Rosa palo")["id"]
+
+
+def test_ficha_con_compras(autenticado, config_tmp, rosa):
+    v = crear_cliente(autenticado).json()
+    pedido(config_tmp, v["id"], 125000, dias_atras=10, variante_id=rosa)
+    pedido(config_tmp, v["id"], 98000, dias_atras=2)
+    hoy = pedido(config_tmp, v["id"], 28000, canal="feria")
+    f = autenticado.get(f"/api/clientes/{v['id']}").json()
+    assert f["total_comprado"] == 251000
+    assert f["compras"] == 3
+    assert f["promedio"] == 83667
+    assert f["canal_frecuente"] == "instagram"
+    assert f["por_cobrar"] == 0
+    assert f["historial"][0]["id"] == hoy
+    assert f["ultima_compra"] == f["historial"][0]["fecha"]
+    assert f["historial"][0]["numero"] == f"{hoy:04d}"
+    assert [h["total"] for h in f["historial"]] == [28000, 98000, 125000]
+    assert f["historial"][2]["productos"] == "Bolso balde · Rosa palo"
+
+
+def test_ficha_no_cuenta_anuladas(autenticado, config_tmp):
+    v = crear_cliente(autenticado).json()
+    pedido(config_tmp, v["id"], 50000, estado="cancelado", pagado=0, dias_atras=1)
+    pedido(config_tmp, v["id"], 30000)
+    f = autenticado.get(f"/api/clientes/{v['id']}").json()
+    assert f["total_comprado"] == 30000
+    assert f["compras"] == 1
+    assert f["promedio"] == 30000
+    assert [h["estado"] for h in f["historial"]] == ["entregado", "cancelado"]
+
+
+def test_por_cobrar(autenticado, config_tmp):
+    v = crear_cliente(autenticado).json()
+    pedido(config_tmp, v["id"], 200000, pagado=100000)
+    pedido(config_tmp, v["id"], 80000, estado="cancelado", pagado=0)
+    assert autenticado.get(f"/api/clientes/{v['id']}").json()["por_cobrar"] == 100000
+
+
+def test_lista_trae_total_comprado(autenticado, config_tmp):
+    v = crear_cliente(autenticado).json()
+    pedido(config_tmp, v["id"], 125000)
+    pedido(config_tmp, v["id"], 40000, estado="cancelado", pagado=0)
+    lista = autenticado.get("/api/clientes").json()
+    assert lista[0]["total_comprado"] == 125000
+
+
+def test_ficha_sin_compras(autenticado):
+    f = crear_cliente(autenticado).json()
+    assert f["promedio"] == 0
+    assert f["canal_frecuente"] is None
+    assert f["ultima_compra"] is None

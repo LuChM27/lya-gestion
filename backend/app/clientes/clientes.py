@@ -3,15 +3,17 @@
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
-from app.clientes.esquemas import ClienteEntrada, ClienteFicha, ClienteResumen
+from app.clientes.esquemas import ClienteEntrada, ClienteFicha, ClienteResumen, CompraCliente
 from app.db import SesionDB
 from app.inventario.existencias import ErrorInventario
+from app.inventario.modelos import Modelo, Variante
 from app.inventario.productos import sin_tildes
-from app.ventas.modelos import Cliente
+from app.ventas.modelos import Cliente, Pago, Pedido, PedidoItem
+from app.ventas.ventas import numero
 
 router = APIRouter(prefix="/api/clientes", dependencies=[Depends(usuario_actual)])
 
@@ -60,9 +62,42 @@ def _resumen(cliente: Cliente, total: int) -> ClienteResumen:
     )
 
 
+def _productos(sesion: Session, pedido_ids: list[int]) -> dict[int, list[str]]:
+    filas = sesion.execute(
+        select(PedidoItem.pedido_id, Modelo.nombre, Variante.color)
+        .join(Variante, PedidoItem.variante_id == Variante.id)
+        .join(Modelo, Variante.modelo_id == Modelo.id)
+        .where(PedidoItem.pedido_id.in_(pedido_ids))
+        .order_by(PedidoItem.id)
+    ).all()
+    productos: dict[int, list[str]] = {}
+    for pedido_id, modelo, color in filas:
+        productos.setdefault(pedido_id, []).append(f"{modelo} · {color}")
+    return productos
+
+
 def ficha(sesion: Session, cliente: Cliente) -> ClienteFicha:
+    pagado = (
+        select(Pago.pedido_id, func.sum(Pago.monto).label("monto"))
+        .group_by(Pago.pedido_id)
+        .subquery()
+    )
+    filas = sesion.execute(
+        select(Pedido, func.coalesce(pagado.c.monto, 0))
+        .outerjoin(pagado, pagado.c.pedido_id == Pedido.id)
+        .where(Pedido.cliente_id == cliente.id)
+        .order_by(Pedido.fecha.desc(), Pedido.id.desc())
+    ).all()
+    validos = [(p, monto) for p, monto in filas if p.estado != "cancelado"]
+    total = sum(p.total for p, _ in validos)
+    canales: dict[str, int] = {}
+    for p, _ in validos:
+        canales[p.canal] = canales.get(p.canal, 0) + 1
+    # En empate gana el de la compra más reciente: validos va del más nuevo al más viejo.
+    frecuente = max(canales, key=lambda c: canales[c], default=None)
+    productos = _productos(sesion, [p.id for p, _ in filas])
     return ClienteFicha(
-        **_resumen(cliente, 0).model_dump(),
+        **_resumen(cliente, total).model_dump(),
         direccion=cliente.direccion,
         ciudad=cliente.ciudad,
         correo=cliente.correo,
@@ -70,12 +105,22 @@ def ficha(sesion: Session, cliente: Cliente) -> ClienteFicha:
         notas=cliente.notas,
         enlace_whatsapp=f"https://wa.me/{cliente.whatsapp}",
         creado=cliente.creado,
-        compras=0,
-        por_cobrar=0,
-        promedio=0,
-        canal_frecuente=None,
-        ultima_compra=None,
-        historial=[],
+        compras=len(validos),
+        por_cobrar=sum(max(p.total - monto, 0) for p, monto in validos),
+        promedio=round(total / len(validos)) if validos else 0,
+        canal_frecuente=frecuente,
+        ultima_compra=validos[0][0].fecha if validos else None,
+        historial=[
+            CompraCliente(
+                id=p.id,
+                numero=numero(p.id),
+                fecha=p.fecha,
+                productos=", ".join(productos.get(p.id, [])),
+                total=p.total,
+                estado=p.estado,
+            )
+            for p, _ in filas
+        ],
     )
 
 
@@ -103,7 +148,14 @@ def listar(sesion: SesionDB, buscar: str = "", archivados: bool = False) -> list
         return bool(digitos) and digitos in (c.whatsapp or "")
 
     elegidas = sorted((c for c in clientes if coincide(c)), key=lambda c: sin_tildes(c.nombre))
-    return [_resumen(c, 0) for c in elegidas]
+    totales = dict(
+        sesion.execute(
+            select(Pedido.cliente_id, func.sum(Pedido.total))
+            .where(Pedido.estado != "cancelado")
+            .group_by(Pedido.cliente_id)
+        ).all()
+    )
+    return [_resumen(c, totales.get(c.id, 0)) for c in elegidas]
 
 
 @router.post("", status_code=201)
