@@ -95,6 +95,13 @@ def registrar_venta(sesion: Session, datos: VentaEntrada) -> Pedido:
     cuenta = sesion.get(Cuenta, datos.cuenta_id)
     if cuenta is None or not cuenta.activa:
         raise ErrorInventario(ELIGE_CUENTA)
+    if datos.cliente_id is None:
+        cliente_id = sesion.scalar(select(Cliente.id).where(Cliente.es_mostrador).limit(1))
+    else:
+        cliente = sesion.get(Cliente, datos.cliente_id)
+        if cliente is None or not cliente.activo:
+            raise ErrorInventario("Elige una clienta de la lista.")
+        cliente_id = cliente.id
     fecha = _fecha(datos.fecha)
     cantidades: dict[int, int] = {}
     for i in datos.items:
@@ -112,13 +119,12 @@ def registrar_venta(sesion: Session, datos: VentaEntrada) -> Pedido:
     if datos.descuento > subtotal:
         raise ErrorInventario("El descuento no puede ser mayor que el subtotal.")
 
-    mostrador = sesion.scalar(select(Cliente.id).where(Cliente.es_mostrador).limit(1))
     pedido = Pedido(
         fecha=fecha,
         canal=datos.canal,
         tipo="inmediata",
         estado="entregado",
-        cliente_id=mostrador,
+        cliente_id=cliente_id,
         descuento=datos.descuento,
         total=subtotal - datos.descuento,
         nota=datos.nota,

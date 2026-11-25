@@ -35,6 +35,7 @@ class ItemEntrada(BaseModel):
 class VentaEntrada(BaseModel):
     canal: Canal
     cuenta_id: int
+    cliente_id: int | None = None
     descuento: Annotated[int, Field(ge=0)] = 0
     fecha: date | None = None
     nota: TextoOpcional = None
