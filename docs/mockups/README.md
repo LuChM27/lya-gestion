@@ -11,4 +11,13 @@
 | Inicio · Celular | 390 × 844 | Vendiste hoy, por cobrar, en vitrina, avisos «Para no olvidar» y barra inferior (Inicio, Pedidos, Inventario, Más) |
 | Venta rápida · Celular | 390 × 844 | Tres pasos: qué vendiste, por dónde te compró, cómo te pagó; total, «Cliente de mostrador», confirmación con «Ver comprobante PDF» y «Otra venta» |
 
+Pantallas dibujadas después, como HTML estático en `fuentes/` (no están dentro de `mockups.html`; se abren con doble clic):
+
+| Fuente | Tamaño | Qué muestra |
+|---|---|---|
+| `clientes-mac.html` | 1440 | Lista de clientas con buscador y ficha: «Escribir por WhatsApp», total comprado, por cobrar, compra promedio, contactos e historial |
+| `cuentas-mac.html` | 1440 | Mis cuentas: saldo por cuenta, «Agregar cuenta», resumen del mes, gastos fijos pendientes, compras sin pagar y movimientos por cuenta |
+| `compra-mac.html` | 1440 | Registrar compra de insumos: proveedor, fecha, varios insumos, total y «¿La pagaste?» |
+| `cuentas-celular.html` | 390 | Hoja «¿A quién le vendiste?» de la venta rápida, «Más» con Clientes y Mis cuentas, y «Registrar gasto» |
+
 Los datos que aparecen son de ejemplo. Paleta, tipografía y reglas visuales: ver la sección *Identidad visual* en [`../arquitectura.md`](../arquitectura.md).
