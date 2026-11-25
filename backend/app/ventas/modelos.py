@@ -43,6 +43,7 @@ class Cliente(Base):
     cedula: Mapped[str | None] = mapped_column(String(20))
     notas: Mapped[str | None] = mapped_column(String(500))
     es_mostrador: Mapped[bool] = mapped_column(Boolean, default=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
     creado: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
