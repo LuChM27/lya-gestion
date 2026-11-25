@@ -12,11 +12,12 @@ const ESTADOS: Record<string, [string, string]> = {
   cancelado: ["Anulada", "bg-peligro-fondo text-peligro"],
 };
 
-export function Avatar({ nombre, grande = false }: { nombre: string; grande?: boolean }) {
+export function Avatar({ nombre, grande = false, chico = false }: { nombre: string; grande?: boolean; chico?: boolean }) {
+  const tamano = grande ? "h-16 w-16 text-[22px]" : chico ? "h-10 w-10 text-[15px]" : "h-11 w-11 text-base";
   return (
     <span
       aria-hidden
-      className={`flex shrink-0 items-center justify-center rounded-full bg-rosa-claro font-extrabold text-rosa-activo ${grande ? "h-16 w-16 text-[22px]" : "h-11 w-11 text-base"}`}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-rosa-claro font-extrabold text-rosa-activo ${tamano}`}
     >
       {iniciales(nombre)}
     </span>
