@@ -123,11 +123,11 @@ export default function FichaCliente({
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="text-left text-[13px] text-suave">
-                <th scope="col" className="px-2 py-2.5 font-extrabold">Fecha</th>
+                <th scope="col" className="hidden px-2 py-2.5 font-extrabold sm:table-cell">Fecha</th>
                 <th scope="col" className="px-2 py-2.5 font-extrabold">Venta</th>
                 <th scope="col" className="hidden px-2 py-2.5 font-extrabold md:table-cell">Productos</th>
                 <th scope="col" className="px-2 py-2.5 text-right font-extrabold">Total</th>
-                <th scope="col" className="px-2 py-2.5 font-extrabold">Estado</th>
+                <th scope="col" className="hidden px-2 py-2.5 font-extrabold sm:table-cell">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -135,13 +135,18 @@ export default function FichaCliente({
                 const [texto, clases] = ESTADOS[h.estado] ?? [h.estado, "bg-rosa-claro text-rosa-oscuro"];
                 return (
                   <tr key={h.id} className="border-t border-borde">
-                    <td className="px-2 py-3 whitespace-nowrap">{fecha(h.fecha)}</td>
+                    <td className="hidden px-2 py-3 whitespace-nowrap sm:table-cell">{fecha(h.fecha)}</td>
                     <td className="px-2 py-3 whitespace-nowrap">
                       <Link to={`/ventas/${h.id}`} className="font-extrabold no-underline">{`N.º ${h.numero}`}</Link>
+                      {/* En el celular no caben cinco columnas: fecha y estado van aquí debajo. */}
+                      <span className="block text-xs text-suave sm:hidden">
+                        {fecha(h.fecha)}
+                        {h.estado === "cancelado" && <span className="ml-1.5 font-extrabold text-peligro">Anulada</span>}
+                      </span>
                     </td>
                     <td className="hidden px-2 py-3 md:table-cell">{h.productos}</td>
                     <td className="px-2 py-3 text-right font-extrabold whitespace-nowrap">{pesos(h.total)}</td>
-                    <td className="px-2 py-3">
+                    <td className="hidden px-2 py-3 sm:table-cell">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap ${clases}`}>{texto}</span>
                     </td>
                   </tr>

@@ -51,8 +51,14 @@ export default function Clientes() {
   // La ficha cargada solo se muestra si es la de la dirección actual.
   const ficha = cargada && String(cargada.id) === id ? cargada : null;
 
+  // Cada vez que ella cambia de clienta, de modo o de búsqueda, el aviso anterior ya no aplica.
+  function cambiar(m: "ver" | "crear" | "editar") {
+    setModo(m);
+    setError("");
+  }
+
   function guardada(c: ClienteFicha) {
-    setModo("ver");
+    cambiar("ver");
     setFicha(c);
     recargar();
     if (String(c.id) !== id) navegar(`/clientes/${c.id}`);
@@ -75,7 +81,7 @@ export default function Clientes() {
     }
   }
 
-  const nueva = () => setModo("crear");
+  const nueva = () => cambiar("crear");
   const detalle = Boolean(id) || modo === "crear";
   const filtrando = buscar.trim() !== "" || archivados;
 
@@ -84,18 +90,18 @@ export default function Clientes() {
     derecha = (
       <section aria-label="Nueva clienta" className={`${TARJETA} p-5 md:px-[26px] md:py-6`}>
         <h2 className="font-titulo text-[26px] font-semibold">Nueva clienta</h2>
-        <FormularioCliente alCancelar={() => setModo("ver")} alGuardar={guardada} />
+        <FormularioCliente alCancelar={() => cambiar("ver")} alGuardar={guardada} />
       </section>
     );
   } else if (ficha && modo === "editar") {
     derecha = (
       <section aria-label="Editar clienta" className={`${TARJETA} p-5 md:px-[26px] md:py-6`}>
         <h2 className="font-titulo text-[26px] font-semibold">Editar clienta</h2>
-        <FormularioCliente inicial={ficha} alCancelar={() => setModo("ver")} alGuardar={guardada} />
+        <FormularioCliente inicial={ficha} alCancelar={() => cambiar("ver")} alGuardar={guardada} />
       </section>
     );
   } else if (ficha) {
-    derecha = <FichaCliente ficha={ficha} alEditar={() => setModo("editar")} alArchivar={archivar} alRecuperar={recuperar} />;
+    derecha = <FichaCliente ficha={ficha} alEditar={() => cambiar("editar")} alArchivar={archivar} alRecuperar={recuperar} />;
   } else if (!id) {
     derecha = (
       <div className="hidden md:block">
@@ -122,7 +128,7 @@ export default function Clientes() {
       {detalle && (
         <Link
           to="/clientes"
-          onClick={() => setModo("ver")}
+          onClick={() => cambiar("ver")}
           className="inline-flex h-11 items-center gap-2 self-start text-sm font-extrabold text-rosa-oscuro no-underline md:hidden"
         >
           <IconoVolver tamano={18} />
@@ -152,7 +158,7 @@ export default function Clientes() {
                 <input
                   type="search"
                   value={buscar}
-                  onChange={(e) => setBuscar(e.target.value)}
+                  onChange={(e) => (setBuscar(e.target.value), setError(""))}
                   placeholder="Buscar por nombre, WhatsApp o Instagram"
                   className="min-w-0 flex-1 border-0 bg-transparent text-base text-tinta outline-none"
                 />
@@ -167,7 +173,7 @@ export default function Clientes() {
                       <li key={c.id}>
                         <Link
                           to={`/clientes/${c.id}`}
-                          onClick={() => setModo("ver")}
+                          onClick={() => cambiar("ver")}
                           aria-current={activa ? "true" : undefined}
                           className={`flex items-center gap-3 rounded-[18px] px-3.5 py-3 text-tinta no-underline focus-visible:outline-2 focus-visible:outline-rosa ${activa ? "bg-rosa-claro" : "bg-superficie hover:bg-fondo"}`}
                         >
@@ -185,7 +191,7 @@ export default function Clientes() {
               )}
               <button
                 type="button"
-                onClick={() => setArchivados((v) => !v)}
+                onClick={() => (setArchivados((v) => !v), setError(""))}
                 className="min-h-11 self-start px-3.5 text-sm font-extrabold text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-rosa"
               >
                 {archivados ? "Ver clientas activas" : "Ver archivadas"}

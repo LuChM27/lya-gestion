@@ -138,3 +138,28 @@ test("lista vacía", async () => {
   expect(await screen.findByText("Todavía no tienes clientas.")).toBeInTheDocument();
   expect(screen.getAllByRole("button", { name: "Nueva clienta" }).length).toBe(2);
 });
+
+test("el error se borra al abrir otra clienta", async () => {
+  simularApi({
+    "GET /api/clientes": { cuerpo: [VALENTINA, SOFIA] },
+    "GET /api/clientes/99": { estado: 404, cuerpo: { detail: "Esa clienta no existe." } },
+    "GET /api/clientes/6": { cuerpo: { ...FICHA, ...SOFIA } },
+  });
+  montar("/clientes/99");
+  expect(await screen.findByText("Esa clienta no existe.")).toBeInTheDocument();
+  await userEvent.click(within(screen.getByRole("list", { name: "Clientas" })).getByText("Sofía Gómez"));
+  expect(await screen.findByRole("heading", { name: "Sofía Gómez" })).toBeInTheDocument();
+  expect(screen.queryByText("Esa clienta no existe.")).not.toBeInTheDocument();
+});
+
+test("en el celular el historial junta fecha y estado bajo el número", async () => {
+  const anulada = { id: 32, numero: "0032", fecha: "2026-11-22T15:00:00Z", productos: "Pulsera", total: 28000, estado: "cancelado" };
+  simularApi({ "GET /api/clientes": { cuerpo: [VALENTINA] }, "GET /api/clientes/5": { cuerpo: { ...FICHA, historial: [...FICHA.historial, anulada] } } });
+  montar("/clientes/5");
+  const celda = (await screen.findByRole("link", { name: "N.º 0032" })).closest("td")!;
+  expect(within(celda).getByText("22/11/2026")).toBeInTheDocument();
+  expect(within(celda).getByText("Anulada")).toBeInTheDocument();
+  for (const columna of ["Fecha", "Estado"]) {
+    expect(screen.getByRole("columnheader", { name: columna })).toHaveClass("hidden");
+  }
+});

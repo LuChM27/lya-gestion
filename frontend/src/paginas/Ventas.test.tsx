@@ -121,3 +121,13 @@ test("borrar el día vuelve a hoy", async () => {
   expect(await screen.findByText("1 venta · $ 240.000")).toBeInTheDocument();
   expect(screen.getByLabelText("Día")).toHaveValue(hoy);
 });
+
+test("la lista muestra la clienta cuando no es de mostrador", async () => {
+  const deValentina = { ...OTRA, cliente: "Valentina Ríos" };
+  simularApi({ [`GET /api/ventas?dia=${hoy}`]: { cuerpo: { dia: hoy, ventas: [VENTA, deValentina], total: 365000, cantidad: 2 } } });
+  montar("/ventas");
+  const fila = (await screen.findByText(/N\.º 0013/)).closest("a")!;
+  expect(within(fila).getByText(/Valentina Ríos/)).toBeInTheDocument();
+  const mostrador = screen.getByText(/N\.º 0012/).closest("a")!;
+  expect(within(mostrador).queryByText(/Cliente de mostrador/)).not.toBeInTheDocument();
+});

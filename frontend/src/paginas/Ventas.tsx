@@ -7,6 +7,8 @@ import { BotonPrincipal, Encabezado, Vacio } from "../componentes/ui";
 import { hora, pesos } from "../formato";
 import { hoyBogota, nombreCanal, resumenItems, type DiaVentas } from "../ventas";
 
+const MOSTRADOR = "Cliente de mostrador";
+
 export default function Ventas() {
   const [dia, setDia] = useState(hoyBogota);
   const [datos, setDatos] = useState<DiaVentas | null>(null);
@@ -57,7 +59,7 @@ export default function Ventas() {
                     <IconoVentas tamano={18} />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-px">
-                    <span className="truncate text-sm font-extrabold">{`N.º ${v.numero} · ${hora(v.fecha)} · ${nombreCanal(v.canal)}`}</span>
+                    <span className="truncate text-sm font-extrabold">{`N.º ${v.numero} · ${hora(v.fecha)} · ${nombreCanal(v.canal)}${v.cliente === MOSTRADOR ? "" : ` · ${v.cliente}`}`}</span>
                     <span className={`truncate text-xs text-suave ${anulada ? "line-through" : ""}`}>{resumenItems(v)}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-0.5">
