@@ -58,7 +58,7 @@ El usuario eligió B.
 
 **Datos.** `Cliente` ya existe (nombre, whatsapp, direccion, ciudad, instagram, correo, cedula, notas, es_mostrador). Se agrega `activo` (archivar, como en inventario). `instagram` se muestra como «Instagram o TikTok».
 
-**Crear y editar.** Obligatorios: nombre y WhatsApp. Lo demás es opcional. *(Decisión de Claude: la spec pide también dirección y ciudad, pero sirven para envíos y frenarían una venta en la feria; se volverán obligatorias para encargos con envío en la Fase 2.)* Si el WhatsApp ya es de otra clienta activa, 409 «Ya tienes a {nombre} con ese WhatsApp.». El WhatsApp se guarda solo con dígitos; si tiene 10 y empieza por 3, se le antepone 57 para el enlace `https://wa.me/57…`.
+**Crear y editar.** Obligatorios: nombre y WhatsApp. Lo demás es opcional. *(Decisión de Claude: la spec pide también dirección y ciudad, pero sirven para envíos y frenarían una venta en la feria; se volverán obligatorias para encargos con envío en la Fase 2.)* Si el WhatsApp ya es de otra clienta activa, 409 «Ya tienes a {nombre} con ese WhatsApp.». El WhatsApp se guarda solo con dígitos y con indicativo: si tiene 10 y empieza por 3, se le antepone 57. Así «300 456 7812», «+57 300-456-7812» y «573004567812» son el mismo número. El enlace es `https://wa.me/<dígitos>` y en pantalla un número colombiano se ve «300 456 7812».
 
 **«Cliente de mostrador».** No sale en la lista ni se puede editar o archivar.
 
