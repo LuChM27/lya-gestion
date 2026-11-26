@@ -19,6 +19,7 @@ def cliente_web(tmp_path):
             "DATA_DIR": str(tmp_path / "datos"),
             "BACKUP_DIR": str(tmp_path / "r"),
             "WEB_DIR": str(web),
+            "RESPALDO_DIARIO": "0",
         }
     )
     migrar(config)

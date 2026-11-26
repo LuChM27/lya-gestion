@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { ErrorApi, pedir } from "../api";
 import { IconoSiguiente, IconoSumar } from "../componentes/iconos";
 import { BotonPrincipal, Encabezado, type EstadoStock } from "../componentes/ui";
-import { pesos } from "../formato";
+import { fecha, pesos } from "../formato";
 import { nombreCanal } from "../ventas";
 
 // docs/mockups/fuentes/inicio-mac.html e inicio-celular.html. Ganancia, por cobrar y la gráfica
 // llegan con sus módulos; mientras tanto se muestran las cifras que ya existen.
 type Aviso = { tipo: "producto" | "insumo"; id: number; nombre: string; detalle: string; estado: EstadoStock };
 type DatosInicio = {
+  respaldo: { atrasado: boolean; ultimo: string | null };
   ventas_hoy: { total: number; cantidad: number; por_canal: Record<string, number> };
   ventas_mes: { total: number; cantidad: number; mes: string };
   vitrina: { piezas: number; valor: number };
@@ -50,7 +51,8 @@ export default function Inicio() {
   const avisos = datos?.avisos ?? [];
   // Los avisos llegan cortados en 5; los conteos vienen completos en por_revisar.
   const porAgotarse = datos?.por_revisar.productos ?? 0;
-  const pendientes = porAgotarse + (datos?.por_revisar.insumos ?? 0);
+  const respaldoAtrasado = datos?.respaldo.atrasado ?? false;
+  const pendientes = porAgotarse + (datos?.por_revisar.insumos ?? 0) + (respaldoAtrasado ? 1 : 0);
   return (
     <>
       <Encabezado
@@ -100,6 +102,23 @@ export default function Inicio() {
 
           <section className="flex max-w-[560px] flex-col gap-2.5 md:gap-4 md:rounded-[28px] md:border md:border-borde md:bg-superficie md:p-[26px] md:shadow-tarjeta">
             <h2 className="text-[17px] font-extrabold md:text-[19px]">Para no olvidar</h2>
+            {respaldoAtrasado && datos.respaldo && (
+              <Link
+                to="/ajustes"
+                className="flex items-center gap-3 rounded-[18px] border border-borde bg-superficie px-3.5 py-3 text-tinta no-underline hover:border-rosa md:items-start md:border-0 md:bg-peligro-fondo md:p-3"
+              >
+                <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-peligro-fondo md:mt-1.5 md:h-2.5 md:w-2.5 md:bg-transparent">
+                  <span className="h-2.5 w-2.5 rounded-full bg-peligro" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-px md:gap-0.5">
+                  <span className="truncate text-sm leading-[1.35] font-extrabold md:whitespace-normal">Haz un respaldo de tus datos</span>
+                  <span className="truncate text-xs leading-[1.35] text-suave md:text-[13px] md:whitespace-normal md:text-tinta-detalle">
+                    {datos.respaldo.ultimo ? `El último es del ${fecha(datos.respaldo.ultimo)}` : "Todavía no hay ninguno"}
+                  </span>
+                </span>
+                <IconoSiguiente tamano={16} className="shrink-0 text-flecha md:hidden" />
+              </Link>
+            )}
             {avisos.length === 0 ? (
               <p className="rounded-[18px] border border-borde bg-superficie px-3.5 py-3 text-sm md:border-0 md:bg-ok-fondo">Todo el inventario está en orden.</p>
             ) : (

@@ -2,7 +2,7 @@ import { useState, type ComponentType } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useSalir } from "../sesion";
 import AccesoCelular from "./AccesoCelular";
-import { IconoClientes, IconoCuentas, IconoInicio, IconoInventario, IconoMas, IconoQr, IconoSalir, IconoSumar, IconoVentas } from "./iconos";
+import { IconoAjustes, IconoClientes, IconoCuentas, IconoInicio, IconoInventario, IconoMas, IconoQr, IconoSalir, IconoSumar, IconoVentas } from "./iconos";
 
 // Menú lateral de docs/mockups/fuentes/inicio-mac.html; encabezado y barra de inicio-celular.html.
 // Solo se muestran las secciones que ya existen; Pedidos, Estadísticas y demás llegan con su módulo.
@@ -18,7 +18,7 @@ const INVENTARIO: Seccion = {
 };
 const CLIENTES: Seccion = { a: "/clientes", texto: "Clientes", icono: IconoClientes, activa: (r) => r.startsWith("/clientes") };
 const CUENTAS: Seccion = { a: "/cuentas", texto: "Mis cuentas", icono: IconoCuentas, activa: (r) => ["/cuentas", "/compras"].some((p) => r.startsWith(p)) };
-const MAS: Seccion = { a: "/mas", texto: "Más", icono: IconoMas, activa: (r) => ["/mas", "/clientes", "/cuentas", "/compras"].some((p) => r.startsWith(p)) };
+const MAS: Seccion = { a: "/mas", texto: "Más", icono: IconoMas, activa: (r) => ["/mas", "/clientes", "/cuentas", "/compras", "/ajustes"].some((p) => r.startsWith(p)) };
 
 function MenuLateral({ ruta }: { ruta: string }) {
   const salir = useSalir();
@@ -68,6 +68,16 @@ function MenuLateral({ ruta }: { ruta: string }) {
               <AccesoCelular />
             </div>
           )}
+          <Link
+            to="/ajustes"
+            aria-current={ruta.startsWith("/ajustes") ? "page" : undefined}
+            className={`flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[15px] no-underline focus-visible:outline-2 focus-visible:outline-rosa ${
+              ruta.startsWith("/ajustes") ? "bg-superficie font-extrabold text-rosa-activo shadow-menu" : "font-bold text-tinta-media hover:text-rosa-activo"
+            }`}
+          >
+            <IconoAjustes />
+            Ajustes
+          </Link>
           <button
             type="button"
             onClick={salir}

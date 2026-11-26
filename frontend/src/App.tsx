@@ -14,6 +14,7 @@ import Inicio from "./paginas/Inicio";
 import Insumo from "./paginas/Insumo";
 import Insumos from "./paginas/Insumos";
 import Mas from "./paginas/Mas";
+import Ajustes from "./paginas/Ajustes";
 import Modelo from "./paginas/Modelo";
 import NuevaCompra from "./paginas/NuevaCompra";
 import Productos from "./paginas/Productos";
@@ -60,6 +61,7 @@ function Protegida() {
             <Route path="ventas/:id" element={<Venta />} />
             <Route path="inventario" element={<Navigate to="/productos" replace />} />
             <Route path="mas" element={<Mas />} />
+            <Route path="ajustes" element={<Ajustes />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="clientes/:id" element={<Clientes />} />
             <Route path="cuentas" element={<Cuentas />} />

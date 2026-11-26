@@ -95,6 +95,69 @@ def test_pagar_dos_veces(autenticado, insumos, config_tmp):
     assert contar(config_tmp, Transaccion) == 1
 
 
+def test_dos_pagos_a_la_vez_dejan_un_solo_egreso(autenticado, insumos, config_tmp):
+    """Dos equipos pagan la misma compra al mismo tiempo: uno gana y el otro recibe 409."""
+    import threading
+
+    from fastapi import HTTPException
+    from sqlalchemy.orm import Session
+
+    from app.compras.compras import pagar
+    from app.compras.esquemas import PagoCompra
+    from app.db import crear_motor
+
+    compra = comprar(autenticado, insumos, cuenta_id=None).json()
+    motor = crear_motor(config_tmp)
+    errores: list[int] = []
+
+    def segundo():
+        with Session(motor) as s2:
+            try:
+                pagar(compra["id"], PagoCompra(cuenta_id=NEQUI), s2)
+            except HTTPException as error:
+                errores.append(error.status_code)
+
+    with Session(motor) as s1:
+        commit = s1.commit
+        hilo = threading.Thread(target=segundo)
+
+        def commit_tardio():
+            # El primero ya marcó la compra pero aún no confirma: el segundo entra ahora.
+            hilo.start()
+            hilo.join(0.5)
+            commit()
+
+        s1.commit = commit_tardio
+        pagar(compra["id"], PagoCompra(cuenta_id=EFECTIVO), s1)
+    hilo.join()
+    motor.dispose()
+    assert errores == [409]
+    assert contar(config_tmp, Transaccion) == 1
+    assert autenticado.get(f"/api/compras/{compra['id']}").json()["cuenta"]["nombre"] == "Efectivo"
+
+
+def test_lista_de_compras_no_consulta_por_cada_compra(autenticado, insumos, config_tmp):
+    from sqlalchemy import event
+    from sqlalchemy.orm import Session
+
+    from app.compras.compras import listar
+    from app.db import crear_motor
+
+    for _ in range(5):
+        comprar(autenticado, insumos)
+    comprar(autenticado, insumos, cuenta_id=None)
+    motor = crear_motor(config_tmp)
+    consultas: list[str] = []
+    event.listen(motor, "before_cursor_execute", lambda *a: consultas.append(a[2]))
+    with Session(motor) as s:
+        compras = listar(s)
+    motor.dispose()
+    assert len(compras) == 6
+    assert len(consultas) <= 4
+    assert sum(c["cuenta"] is None for c in (x.model_dump() for x in compras)) == 1
+    assert all(len(c.items) == 2 for c in compras)
+
+
 def test_anular_compra(autenticado, insumos):
     hilo_id = insumos["hilo"]
     compra = comprar(autenticado, insumos).json()
