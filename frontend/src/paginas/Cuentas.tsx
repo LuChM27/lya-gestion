@@ -21,7 +21,7 @@ const TONOS = [
   "bg-ok-fondo text-ok",
 ];
 const SECUNDARIO_CHICO =
-  "inline-flex h-10 items-center rounded-full border-[1.5px] border-rosa-palo bg-superficie px-4 text-sm font-extrabold whitespace-nowrap text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa";
+  "inline-flex h-11 items-center rounded-full border-[1.5px] border-rosa-palo bg-superficie px-4 text-sm font-extrabold whitespace-nowrap text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa";
 
 type Formulario =
   | { cual: "movimiento"; tipo: TipoMovimiento; inicial?: Movimiento; prellenado?: Prellenado }
@@ -103,7 +103,7 @@ function FilaMovimiento({ m, alEditar, alBorrar }: { m: Movimiento; alEditar: ()
   const prefijo = m.signo === "+" ? "+ " : m.signo === "-" ? "− " : "";
   const destino = m.origen ? (m.origen.tipo === "venta" ? `/ventas/${m.origen.id}` : `/compras/${m.origen.id}`) : null;
   return (
-    <li className="flex flex-col gap-2 border-t border-borde py-3 md:grid md:grid-cols-[110px_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_130px] md:items-center md:gap-3 md:px-2">
+    <li className="flex flex-col gap-2 border-t border-borde py-3 md:grid md:grid-cols-[100px_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_120px_190px] md:items-center md:gap-3 md:px-2">
       <div className="flex items-start justify-between gap-3 md:contents">
         <span className="hidden text-sm md:block">{fecha(m.fecha)}</span>
         <span className="flex min-w-0 flex-col">
@@ -123,13 +123,15 @@ function FilaMovimiento({ m, alEditar, alBorrar }: { m: Movimiento; alEditar: ()
         <span className="hidden text-sm md:block">{m.cuenta_destino ? `${m.cuenta} → ${m.cuenta_destino}` : m.cuenta}</span>
         <b className={`shrink-0 text-right text-sm whitespace-nowrap ${color}`}>{prefijo + pesos(m.monto)}</b>
       </div>
-      {m.editable && (
-        <div className="flex flex-wrap items-start gap-2 md:col-span-5 md:justify-end">
+      {m.editable ? (
+        <div className="flex flex-wrap items-start gap-2 md:justify-end">
           <button type="button" onClick={alEditar} className={SECUNDARIO_CHICO}>
             Editar
           </button>
           <Confirmar boton="Borrar" pregunta={`¿Borrar «${m.descripcion}»? El saldo de ${m.cuenta} vuelve a como estaba.`} accion="Borrar movimiento" alConfirmar={alBorrar} />
         </div>
+      ) : (
+        <span className="hidden md:block" />
       )}
     </li>
   );
@@ -212,9 +214,11 @@ export default function Cuentas() {
             </BotonPastilla>
             <BotonPastilla onClick={() => abrir({ cual: "movimiento", tipo: "ingreso" })}>Otro ingreso</BotonPastilla>
             <BotonPastilla onClick={() => abrir({ cual: "movimiento", tipo: "retiro" })}>Retiro personal</BotonPastilla>
-            <BotonPastilla icono={IconoVentas} a="/compras/nueva" className="hidden md:inline-flex">
-              Registrar compra de insumos
-            </BotonPastilla>
+            <div className="hidden md:block">
+              <BotonPastilla icono={IconoVentas} a="/compras/nueva">
+                Registrar compra de insumos
+              </BotonPastilla>
+            </div>
             <BotonPrincipal icono={IconoSumar} a="/cuentas/gasto">
               Registrar gasto
             </BotonPrincipal>
@@ -431,12 +435,13 @@ export default function Cuentas() {
           <p className="py-3 text-sm text-suave">No hay movimientos en este mes.</p>
         ) : (
           <>
-            <div className="hidden grid-cols-[110px_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_130px] gap-3 px-2 pb-1 text-[13px] font-extrabold text-suave md:grid">
+            <div className="hidden grid-cols-[100px_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_120px_190px] gap-3 px-2 pb-1 text-[13px] font-extrabold text-suave md:grid">
               <span>Fecha</span>
               <span>Movimiento</span>
               <span>Categoría</span>
               <span>Cuenta</span>
               <span className="text-right">Monto</span>
+              <span />
             </div>
             <ul className="flex flex-col">
               {movimientos?.map((m) => (
