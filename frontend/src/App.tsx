@@ -6,6 +6,7 @@ import Clientes from "./paginas/Clientes";
 import CrearCuenta from "./paginas/CrearCuenta";
 import Cuentas from "./paginas/Cuentas";
 import Entrar from "./paginas/Entrar";
+import Gasto from "./paginas/Gasto";
 import Marco from "./componentes/Marco";
 import Inicio from "./paginas/Inicio";
 import Insumo from "./paginas/Insumo";
@@ -60,6 +61,7 @@ function Protegida() {
             <Route path="clientes/:id" element={<Clientes />} />
             <Route path="cuentas" element={<Cuentas />} />
             <Route path="cuentas/categorias" element={<Categorias />} />
+            <Route path="cuentas/gasto" element={<Gasto />} />
             <Route path="productos" element={<Productos />} />
             <Route path="productos/:id" element={<Modelo />} />
             <Route path="insumos" element={<Insumos />} />
