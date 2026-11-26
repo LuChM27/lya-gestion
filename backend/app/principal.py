@@ -9,6 +9,7 @@ from app import inicio, red, salud
 from app.auth import rutas as rutas_auth
 from app.auth.limitador import Limitador
 from app.clientes import clientes
+from app.compras import compras
 from app.config import Config
 from app.cuentas import cuentas, movimientos
 from app.db import crear_motor
@@ -44,6 +45,7 @@ def crear_app(config: Config) -> FastAPI:
     app.include_router(clientes.router)
     app.include_router(cuentas.router)
     app.include_router(movimientos.router)
+    app.include_router(compras.router)
 
     @app.exception_handler(ErrorInventario)
     async def error_de_inventario(_: Request, error: ErrorInventario) -> JSONResponse:
