@@ -39,12 +39,13 @@ export default function FormularioMovimiento({
     const n = inicial?.monto ?? prellenado?.monto;
     return n ? pesos(n) : "";
   });
-  const [categoria, setCategoria] = useState(prellenado?.categoria_id ? String(prellenado.categoria_id) : "");
-  const [cuenta, setCuenta] = useState(prellenado?.cuenta_id ? String(prellenado.cuenta_id) : "");
-  const [destino, setDestino] = useState("");
+  const texto = (n: number | null | undefined) => (n ? String(n) : "");
+  const [categoria, setCategoria] = useState(texto(inicial ? inicial.categoria_id : prellenado?.categoria_id));
+  const [cuenta, setCuenta] = useState(texto(inicial ? inicial.cuenta_id : prellenado?.cuenta_id));
+  const [destino, setDestino] = useState(texto(inicial?.cuenta_destino_id));
   const fechaInicial = inicial ? diaBogota(inicial.fecha) : hoy;
   const [fecha, setFecha] = useState(fechaInicial);
-  const [nota, setNota] = useState(inicial ? (inicial.descripcion === inicial.categoria ? "" : inicial.descripcion) : (prellenado?.nota ?? ""));
+  const [nota, setNota] = useState(inicial ? (inicial.nota ?? "") : (prellenado?.nota ?? ""));
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
   const conCategoria = tipo === "gasto" || tipo === "ingreso";
@@ -59,13 +60,7 @@ export default function FormularioMovimiento({
         const usables = cats.filter((c) => c.nombre !== "Ventas");
         setCuentas(lista);
         setCategorias(usables);
-        const porNombre = (nombre: string | null) => lista.find((c) => c.nombre === nombre);
-        if (inicial) {
-          setCuenta(String(porNombre(inicial.cuenta)?.id ?? ""));
-          setDestino(String(porNombre(inicial.cuenta_destino)?.id ?? ""));
-          setCategoria(String(usables.find((c) => c.nombre === inicial.categoria)?.id ?? ""));
-          return;
-        }
+        if (inicial) return;
         setCuenta((actual) => {
           if (actual) return actual;
           const guardada = recordado("gasto.cuenta");
@@ -93,7 +88,7 @@ export default function FormularioMovimiento({
       // Sin cambio de día, el servidor deja la hora: hoy es ahora; al editar, la que tenía.
       fecha: fecha === fechaInicial && (inicial || fecha === hoy) ? null : fecha,
       nota: nota.trim() || null,
-      gasto_fijo_id: prellenado?.gasto_fijo_id ?? null,
+      gasto_fijo_id: prellenado?.gasto_fijo_id ?? inicial?.gasto_fijo_id ?? null,
     };
     setEnviando(true);
     try {
@@ -107,7 +102,15 @@ export default function FormularioMovimiento({
     }
   }
 
+  // Al editar, la cuenta o categoría que ya tenía sale aunque se haya archivado después.
   const opcionesCuenta = cuentas.map((c) => [String(c.id), c.nombre] as const);
+  for (const [id, nombre] of [[inicial?.cuenta_id, inicial?.cuenta], [inicial?.cuenta_destino_id, inicial?.cuenta_destino]] as const) {
+    if (id && nombre && !opcionesCuenta.some(([v]) => v === String(id))) opcionesCuenta.push([String(id), nombre]);
+  }
+  const opcionesCategoria = categorias.map((c) => [String(c.id), c.nombre] as const);
+  if (inicial?.categoria_id && inicial.categoria && !opcionesCategoria.some(([v]) => v === String(inicial.categoria_id))) {
+    opcionesCategoria.push([String(inicial.categoria_id), inicial.categoria]);
+  }
   const titulo = inicial ? "Editar movimiento" : TITULOS[tipo];
 
   return (
@@ -121,7 +124,7 @@ export default function FormularioMovimiento({
         {conCategoria && (
           <div className="flex flex-col gap-2">
             <span className="text-sm font-extrabold">Categoría</span>
-            <Pastillas etiqueta="Categoría" opciones={categorias.map((c) => [String(c.id), c.nombre] as const)} valor={categoria} alElegir={(v) => (setCategoria(v), setError(""))} />
+            <Pastillas etiqueta="Categoría" opciones={opcionesCategoria} valor={categoria} alElegir={(v) => (setCategoria(v), setError(""))} />
           </div>
         )}
         <div className="flex flex-col gap-2">

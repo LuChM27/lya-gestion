@@ -48,3 +48,19 @@ test("lista por tipo, crea, renombra y archiva", async () => {
   await userEvent.click(gastos.getByRole("button", { name: "Archivar" }));
   await vi.waitFor(() => expect(llamadas.map((l) => l.clave)).toContain("DELETE /api/categorias/4"));
 });
+
+test("ver y recuperar categorías archivadas", async () => {
+  const llamadas = simularApi({
+    "GET /api/categorias": { cuerpo: CATEGORIAS },
+    "GET /api/categorias?archivadas=true": { cuerpo: [{ id: 30, nombre: "Clases", tipo: "gasto", activa: false, protegida: false }] },
+    "POST /api/categorias/30/restaurar": { cuerpo: { id: 30, nombre: "Clases", tipo: "gasto", activa: true, protegida: false } },
+  });
+  render(
+    <MemoryRouter>
+      <Categorias />
+    </MemoryRouter>,
+  );
+  await userEvent.click(await screen.findByRole("button", { name: "Ver archivadas" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Recuperar Clases" }));
+  await vi.waitFor(() => expect(llamadas.map((l) => l.clave)).toContain("POST /api/categorias/30/restaurar"));
+});

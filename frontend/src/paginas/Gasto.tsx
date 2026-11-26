@@ -6,7 +6,7 @@ import { IconoEditar, IconoVolver } from "../componentes/iconos";
 import { Pastillas } from "../componentes/ui";
 import { leerPesos, type Categoria, type GastoFijo } from "../dinero";
 import { pesos } from "../formato";
-import { recordado, recordar, type Cuenta } from "../ventas";
+import { hoyBogota, recordado, recordar, type Cuenta } from "../ventas";
 
 // Registrar gasto: tercera pantalla de docs/mockups/fuentes/cuentas-celular.html, a pantalla
 // completa en el celular como la venta rápida.
@@ -31,6 +31,9 @@ export default function Gasto() {
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState("");
   const [cuenta, setCuenta] = useState("");
+  const hoy = hoyBogota();
+  // En el celular la fecha es hoy; en la Mac se puede cambiar (gasto anotado en el cuaderno).
+  const [dia, setDia] = useState(hoy);
   const [conNota, setConNota] = useState(false);
   const [nota, setNota] = useState("");
   const [gastoFijo, setGastoFijo] = useState<GastoFijo | null>(null);
@@ -73,7 +76,7 @@ export default function Gasto() {
         categoria_id: Number(categoria),
         cuenta_id: Number(cuenta),
         cuenta_destino_id: null,
-        fecha: null,
+        fecha: dia === hoy ? null : dia,
         nota: nota.trim() || null,
         gasto_fijo_id: gastoFijo?.id ?? null,
       });
@@ -122,6 +125,9 @@ export default function Gasto() {
       <Paso numero={2} titulo="¿De dónde salió?">
         <Pastillas etiqueta="¿De dónde salió?" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={(v) => (setCuenta(v), setError(""))} />
       </Paso>
+      <div className="hidden max-w-[260px] md:block">
+        <Campo etiqueta="Fecha" type="date" required={false} value={dia} max={hoy} onChange={(e) => setDia(e.target.value || hoy)} />
+      </div>
       {conNota && <Campo etiqueta="Nota" required={false} value={nota} onChange={(e) => setNota(e.target.value)} maxLength={200} autoFocus />}
 
       <section

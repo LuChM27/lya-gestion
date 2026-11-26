@@ -8,6 +8,8 @@ test("leerPesos acepta puntos de miles y el signo pesos", () => {
   expect(leerPesos("12,5")).toBeNull();
   expect(leerPesos("abc")).toBeNull();
   expect(leerPesos("")).toBeNull();
+  // «150.00» casi seguro es 150.000 con un cero de menos: mejor preguntar que guardar 150.
+  expect(leerPesos("150.00")).toBeNull();
 });
 
 test("meses", () => {

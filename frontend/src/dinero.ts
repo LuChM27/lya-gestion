@@ -18,6 +18,11 @@ export type Movimiento = {
   signo: "+" | "-" | "=";
   editable: boolean;
   origen: { tipo: "venta" | "compra"; id: number; numero: string } | null;
+  nota: string | null;
+  cuenta_id: number;
+  cuenta_destino_id: number | null;
+  categoria_id: number | null;
+  gasto_fijo_id: number | null;
 };
 
 export type GastoFijo = {
@@ -60,6 +65,8 @@ export type Compra = {
 /** Monto en pesos enteros: «$ 150.000», «150.000» o «150000». Con decimales o letras, null. */
 export function leerPesos(texto: string): number | null {
   if (!texto.trim()) return null;
+  // «150.00» casi seguro es 150.000 con un cero de menos: mejor pedirlo de nuevo que guardar 150.
+  if (/\.\d{1,2}$/.test(texto.trim())) return null;
   const n = leerNumero(texto);
   return n !== null && Number.isInteger(n) ? n : null;
 }

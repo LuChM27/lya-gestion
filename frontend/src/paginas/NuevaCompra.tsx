@@ -32,10 +32,13 @@ function nueva(insumo: Insumo): Fila {
   return { insumo, cantidad: "", enCompra, precio: valor === null ? "" : textoPrecio(valor) };
 }
 
+/** Igual que el servidor: cantidad en la unidad propia × precio por esa unidad redondeado a centavos. */
 function subtotal(f: Fila): number | null {
   const c = leerNumero(f.cantidad);
   const p = leerNumero(f.precio);
-  return c === null || p === null ? null : Math.round(c * p);
+  if (c === null || p === null) return null;
+  const factor = f.enCompra ? (f.insumo.factor_compra ?? 1) : 1;
+  return Math.round(c * factor * (Math.round((p / factor) * 100) / 100));
 }
 
 function FilaInsumo({ fila, alCambiar, alQuitar }: { fila: Fila; alCambiar: (f: Fila) => void; alQuitar: () => void }) {

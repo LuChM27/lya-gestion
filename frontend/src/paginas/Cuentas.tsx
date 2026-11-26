@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { borrar, enviar, ErrorApi, pedir } from "../api";
 import Confirmar from "../componentes/Confirmar";
-import { Boton, BotonSecundario, MensajeError } from "../componentes/Formulario";
+import { Boton, BotonSecundario, Campo, MensajeError } from "../componentes/Formulario";
 import FormularioCuenta from "../componentes/FormularioCuenta";
 import FormularioGastoFijo from "../componentes/FormularioGastoFijo";
 import FormularioMovimiento, { type Prellenado } from "../componentes/FormularioMovimiento";
@@ -10,7 +10,7 @@ import { IconoCuentas, IconoSiguiente, IconoSumar, IconoTransferir, IconoVentas,
 import { BotonPastilla, BotonPrincipal, Encabezado, Pastillas } from "../componentes/ui";
 import { mesActual, mesAnterior, mesSiguiente, nombreMes, saldo, ultimoDia, type Compra, type CuentaSaldo, type GastoFijo, type Movimiento, type ResumenMes, type TipoMovimiento } from "../dinero";
 import { fecha, pesos } from "../formato";
-import type { Cuenta } from "../ventas";
+import { hoyBogota, type Cuenta } from "../ventas";
 
 // Mis cuentas, copiada de docs/mockups/fuentes/cuentas-mac.html.
 const TARJETA = "flex min-w-0 flex-col gap-3 rounded-[28px] border border-borde bg-superficie p-5 shadow-tarjeta md:px-[26px] md:py-6";
@@ -55,6 +55,8 @@ function Pendiente({ titulo, detalle, children }: { titulo: string; detalle: str
 function CompraPendiente({ compra, cuentas, alPagar }: { compra: Compra; cuentas: Cuenta[]; alPagar: () => void }) {
   const [abierta, setAbierta] = useState(false);
   const [cuenta, setCuenta] = useState("");
+  const hoy = hoyBogota();
+  const [dia, setDia] = useState(hoy);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -63,7 +65,7 @@ function CompraPendiente({ compra, cuentas, alPagar }: { compra: Compra; cuentas
     if (!cuenta) return setError("Elige de qué cuenta salió.");
     setEnviando(true);
     try {
-      await enviar(`/api/compras/${compra.id}/pago`, { cuenta_id: Number(cuenta), fecha: null });
+      await enviar(`/api/compras/${compra.id}/pago`, { cuenta_id: Number(cuenta), fecha: dia === hoy ? null : dia });
       alPagar();
     } catch (err) {
       setError(err instanceof ErrorApi ? err.mensaje : String(err));
@@ -85,6 +87,9 @@ function CompraPendiente({ compra, cuentas, alPagar }: { compra: Compra; cuentas
         <div className="flex flex-col gap-3 rounded-[18px] bg-fondo p-3.5">
           <span className="text-sm font-extrabold">¿De dónde salió?</span>
           <Pastillas etiqueta="Cuenta" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={(v) => (setCuenta(v), setError(""))} alto="chico" />
+          <div className="max-w-[260px]">
+            <Campo etiqueta="Fecha del pago" type="date" value={dia} max={hoy} onChange={(e) => setDia(e.target.value || hoy)} />
+          </div>
           <MensajeError texto={error} />
           <div className="flex flex-wrap gap-2.5">
             <Boton onClick={pagar} disabled={enviando} className="h-11 w-auto px-5 text-[15px]">
@@ -150,8 +155,28 @@ export default function Cuentas() {
   const [editandoFijos, setEditandoFijos] = useState(false);
   const [fijoEnEdicion, setFijoEnEdicion] = useState<GastoFijo | "nuevo" | null>(null);
   const [error, setError] = useState("");
+  const [archivadas, setArchivadas] = useState<CuentaSaldo[] | null>(null);
   const [version, setVersion] = useState(0);
   const recargar = () => setVersion((v) => v + 1);
+
+  async function verArchivadas() {
+    if (archivadas) return setArchivadas(null);
+    try {
+      setArchivadas(await pedir<CuentaSaldo[]>("/api/cuentas/saldos?archivadas=true"));
+    } catch (err) {
+      setError(err instanceof ErrorApi ? err.mensaje : String(err));
+    }
+  }
+
+  async function recuperar(c: CuentaSaldo) {
+    try {
+      await enviar(`/api/cuentas/${c.id}/restaurar`, {});
+      setArchivadas((lista) => lista?.filter((x) => x.id !== c.id) ?? null);
+      recargar();
+    } catch (err) {
+      setError(err instanceof ErrorApi ? err.mensaje : String(err));
+    }
+  }
 
   useEffect(() => {
     let vigente = true;
@@ -270,6 +295,20 @@ export default function Cuentas() {
           </button>
         )}
       </section>
+
+      <div className="-mt-3 flex flex-col gap-2">
+        <button type="button" onClick={verArchivadas} className="min-h-11 self-start text-sm font-extrabold text-rosa-oscuro">
+          {archivadas ? "Ocultar cuentas archivadas" : "Ver cuentas archivadas"}
+        </button>
+        {archivadas?.length === 0 && <p className="text-sm text-suave">No tienes cuentas archivadas.</p>}
+        {archivadas?.map((c) => (
+          <Pendiente key={c.id} titulo={c.nombre} detalle={`Archivada · saldo ${saldo(c.saldo)}`}>
+            <button type="button" aria-label={`Recuperar ${c.nombre}`} onClick={() => recuperar(c)} className={SECUNDARIO_CHICO}>
+              Recuperar
+            </button>
+          </Pendiente>
+        ))}
+      </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <section aria-label="Resumen del mes" className={TARJETA}>

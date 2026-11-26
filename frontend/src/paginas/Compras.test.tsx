@@ -165,3 +165,35 @@ test("lista de compras", async () => {
   expect(within(sinPagar).getByText("Sin pagar")).toBeInTheDocument();
   expect(within(screen.getByText(/N\.º 0006/).closest("a")!).getByText("Nequi")).toBeInTheDocument();
 });
+
+test("el subtotal coincide con lo que guarda el servidor", async () => {
+  const siete = { ...HILO, id: 5, nombre: "Cuentas sueltas", unidad: "unidades", unidad_compra: "bolsas", factor_compra: 7, precio_unitario: null };
+  api({ "GET /api/inventario/insumos": { cuerpo: [siete] } });
+  montar("/compras/nueva");
+  await screen.findByRole("button", { name: "Nequi" });
+  await agregar("Cuentas sueltas");
+  const fila = within(screen.getByRole("group", { name: "Cuentas sueltas" }));
+  fireEvent.change(fila.getByLabelText("Cantidad de Cuentas sueltas"), { target: { value: "1000" } });
+  fireEvent.change(fila.getByLabelText("Precio de Cuentas sueltas"), { target: { value: "1000" } });
+  // 7.000 unidades × $ 142,86 (1.000 ÷ 7 redondeado a centavos), como el servidor.
+  expect(fila.getByText("$ 1.000.020")).toBeInTheDocument();
+});
+
+test("pago de otro día y aviso si otro equipo ya pagó", async () => {
+  const pagada = { ...COMPRA, cuenta: { id: 2, nombre: "Nequi" }, pagada_el: "2026-11-24T15:00:00Z" };
+  api({
+    "GET /api/compras/7": { cuerpo: COMPRA },
+  });
+  montar("/compras/7");
+  await userEvent.click(await screen.findByRole("button", { name: "Efectivo" }));
+  fireEvent.change(screen.getByLabelText("Fecha del pago"), { target: { value: "2026-11-24" } });
+  const llamadas = simularApi({
+    "GET /api/compras/7": { cuerpo: pagada },
+    "GET /api/cuentas": { cuerpo: CUENTAS },
+    "POST /api/compras/7/pago": { estado: 409, cuerpo: { detail: "Esta compra ya está pagada." } },
+  });
+  await userEvent.click(screen.getByRole("button", { name: "Guardar pago" }));
+  expect(await screen.findByText(/Pagada con Nequi/)).toBeInTheDocument();
+  expect(screen.getByText("Esta compra ya está pagada.")).toBeInTheDocument();
+  expect(llamadas.find((l) => l.clave === "POST /api/compras/7/pago")?.cuerpo).toEqual({ cuenta_id: 1, fecha: "2026-11-24" });
+});

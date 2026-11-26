@@ -10,9 +10,9 @@ import type { Categoria } from "../dinero";
 const CAMPO =
   "h-11 min-w-0 flex-1 rounded-2xl border-[1.5px] border-borde-campo bg-superficie px-4 text-[15px] text-tinta outline-none focus:border-2 focus:border-rosa";
 const CHICO =
-  "inline-flex h-10 items-center rounded-full border-[1.5px] border-rosa-palo bg-superficie px-4 text-sm font-extrabold whitespace-nowrap text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa";
+  "inline-flex h-11 items-center rounded-full border-[1.5px] border-rosa-palo bg-superficie px-4 text-sm font-extrabold whitespace-nowrap text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa";
 const PRINCIPAL_CHICO =
-  "inline-flex h-10 items-center rounded-full bg-rosa px-4 text-sm font-extrabold whitespace-nowrap text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60";
+  "inline-flex h-11 items-center rounded-full bg-rosa px-4 text-sm font-extrabold whitespace-nowrap text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa disabled:opacity-60";
 
 function Fila({ c, alCambiar }: { c: Categoria; alCambiar: () => void }) {
   const [modo, setModo] = useState<"ver" | "renombrar" | "archivar">("ver");
@@ -137,7 +137,28 @@ export default function Categorias() {
     pedir<Categoria[]>("/api/categorias").then(setCategorias, (err) => setError(err instanceof ErrorApi ? err.mensaje : String(err)));
   }, [version]);
 
+  const [archivadas, setArchivadas] = useState<Categoria[] | null>(null);
   const recargar = () => setVersion((v) => v + 1);
+
+  async function verArchivadas() {
+    if (archivadas) return setArchivadas(null);
+    try {
+      setArchivadas(await pedir<Categoria[]>("/api/categorias?archivadas=true"));
+    } catch (err) {
+      setError(err instanceof ErrorApi ? err.mensaje : String(err));
+    }
+  }
+
+  async function recuperar(c: Categoria) {
+    try {
+      await enviar(`/api/categorias/${c.id}/restaurar`, {});
+      setArchivadas((lista) => lista?.filter((x) => x.id !== c.id) ?? null);
+      recargar();
+    } catch (err) {
+      setError(err instanceof ErrorApi ? err.mensaje : String(err));
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Link to="/cuentas" className="inline-flex h-11 items-center gap-2 self-start text-sm font-extrabold text-rosa-oscuro no-underline">
@@ -153,6 +174,20 @@ export default function Categorias() {
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <Grupo titulo="Gastos" tipo="gasto" categorias={categorias.filter((c) => c.tipo === "gasto")} alCambiar={recargar} />
         <Grupo titulo="Ingresos" tipo="ingreso" categorias={categorias.filter((c) => c.tipo === "ingreso")} alCambiar={recargar} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <button type="button" onClick={verArchivadas} className="min-h-11 self-start text-sm font-extrabold text-rosa-oscuro">
+          {archivadas ? "Ocultar archivadas" : "Ver archivadas"}
+        </button>
+        {archivadas?.length === 0 && <p className="text-sm text-suave">No tienes categorías archivadas.</p>}
+        {archivadas?.map((c) => (
+          <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-[18px] border border-borde bg-superficie px-3.5 py-2">
+            <span className="flex-1 text-[15px] font-bold">{c.nombre}</span>
+            <button type="button" aria-label={`Recuperar ${c.nombre}`} onClick={() => recuperar(c)} className={CHICO}>
+              Recuperar
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

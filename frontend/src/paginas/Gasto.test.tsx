@@ -110,3 +110,14 @@ test("sin categoría avisa", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Guardar gasto" }));
   expect(screen.getByText("Elige en qué se fue el dinero.")).toBeInTheDocument();
 });
+
+test("en la Mac se puede cambiar la fecha", async () => {
+  const llamadas = api();
+  montar();
+  fireEvent.change(await screen.findByLabelText("¿Cuánto?"), { target: { value: "5000" } });
+  await userEvent.click(await screen.findByRole("button", { name: "Publicidad" }));
+  fireEvent.change(screen.getByLabelText("Fecha"), { target: { value: "2026-11-20" } });
+  await userEvent.click(screen.getByRole("button", { name: "Guardar gasto" }));
+  await screen.findByText("Mis cuentas");
+  expect(enviado(llamadas)).toMatchObject({ fecha: "2026-11-20" });
+});

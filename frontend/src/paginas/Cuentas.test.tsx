@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { afterEach, expect, test, vi } from "vitest";
@@ -40,7 +40,7 @@ const RESUMEN = {
   por_categoria: [{ categoria: "Insumos", monto: 412000 }],
   saldos_al_cierre: [{ cuenta: "Efectivo", saldo: 642000 }],
 };
-const GASTO = { id: 40, fecha: "2026-11-25T15:00:00Z", tipo: "egreso", descripcion: "Stand Feria Artesanal", categoria: "Stand de feria", cuenta: "Efectivo", cuenta_destino: null, monto: 150000, signo: "-", editable: true, origen: null };
+const GASTO = { id: 40, fecha: "2026-11-25T15:00:00Z", tipo: "egreso", descripcion: "Stand Feria Artesanal", categoria: "Stand de feria", cuenta: "Efectivo", cuenta_destino: null, monto: 150000, signo: "-", editable: true, origen: null, nota: "Stand Feria Artesanal", cuenta_id: 1, cuenta_destino_id: null, categoria_id: 8, gasto_fijo_id: null };
 const VENTA = { ...GASTO, id: 41, tipo: "ingreso", descripcion: "Venta N.º 0012", categoria: "Ventas", cuenta: "Nequi", monto: 125000, signo: "+", editable: false, origen: { tipo: "venta", id: 12, numero: "0012" } };
 const FIJO = { id: 7, nombre: "Internet", monto: 85000, categoria_id: 15, categoria: "Servicios", cuenta_id: 2, cuenta: "Nequi", activo: true, registrado_este_mes: false };
 const COMPRA = { id: 7, numero: "0007", fecha: "2026-11-23T15:00:00Z", proveedor: "Hilos La 14", total: 66000, estado: "activa", nota: null, cuenta: null, pagada_el: null, items: [] };
@@ -166,4 +166,43 @@ test("compra sin pagar: registrar pago", async () => {
     const post = llamadas.find((l) => l.clave === "POST /api/compras/7/pago");
     expect(post?.cuerpo).toEqual({ cuenta_id: 1, fecha: null });
   });
+});
+
+test("editar un gasto fijo con cuenta archivada conserva todo", async () => {
+  const internet = { ...GASTO, id: 42, descripcion: "Internet", nota: null, categoria: "Servicios", categoria_id: 15, cuenta: "Daviplata vieja", cuenta_id: 9, gasto_fijo_id: 7 };
+  const llamadas = api({ [`GET /api/movimientos?mes=${MES}`]: { cuerpo: [internet] }, "PUT /api/movimientos/42": { cuerpo: internet } });
+  montar();
+  const movimientos = within(await screen.findByRole("region", { name: "Movimientos" }));
+  const fila = (await movimientos.findByText("Internet")).closest("li")!;
+  await userEvent.click(within(fila).getByRole("button", { name: "Editar" }));
+  const formulario = within(await screen.findByRole("region", { name: "Editar movimiento" }));
+  expect(await formulario.findByRole("button", { name: "Daviplata vieja" })).toHaveAttribute("aria-pressed", "true");
+  expect(formulario.getByLabelText("Nota (opcional)")).toHaveValue("");
+  await userEvent.click(formulario.getByRole("button", { name: "Guardar cambios" }));
+  await vi.waitFor(() => {
+    const put = llamadas.find((l) => l.clave === "PUT /api/movimientos/42");
+    expect(put?.cuerpo).toMatchObject({ cuenta_id: 9, categoria_id: 15, gasto_fijo_id: 7, nota: null });
+  });
+});
+
+test("ver y recuperar cuentas archivadas", async () => {
+  const llamadas = api({
+    "GET /api/cuentas/saldos?archivadas=true": { cuerpo: [{ id: 9, nombre: "Daviplata vieja", saldo_inicial: 0, saldo: 5000, activa: false }] },
+    "POST /api/cuentas/9/restaurar": { cuerpo: { id: 9, nombre: "Daviplata vieja", saldo_inicial: 0, saldo: 5000, activa: true } },
+  });
+  montar();
+  await userEvent.click(await screen.findByRole("button", { name: "Ver cuentas archivadas" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Recuperar Daviplata vieja" }));
+  await vi.waitFor(() => expect(llamadas.map((l) => l.clave)).toContain("POST /api/cuentas/9/restaurar"));
+});
+
+test("el pago de una compra puede ser de otro día", async () => {
+  const llamadas = api({ "POST /api/compras/7/pago": { cuerpo: { ...COMPRA, cuenta: { id: 1, nombre: "Efectivo" } } } });
+  montar();
+  const compras = within(await screen.findByRole("region", { name: "Compras sin pagar" }));
+  await userEvent.click(await compras.findByRole("button", { name: "Registrar pago" }));
+  await userEvent.click(await compras.findByRole("button", { name: "Efectivo" }));
+  fireEvent.change(compras.getByLabelText("Fecha del pago"), { target: { value: "2026-11-24" } });
+  await userEvent.click(compras.getByRole("button", { name: "Guardar pago" }));
+  await vi.waitFor(() => expect(llamadas.find((l) => l.clave === "POST /api/compras/7/pago")?.cuerpo).toEqual({ cuenta_id: 1, fecha: "2026-11-24" }));
 });
