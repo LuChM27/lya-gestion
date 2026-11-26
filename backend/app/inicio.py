@@ -1,15 +1,17 @@
-"""Cifras de la pantalla de Inicio: ventas del día y del mes, vitrina y avisos de stock."""
+"""Cifras de la pantalla de Inicio: ventas del día y del mes, vitrina, avisos de stock y respaldo."""
 
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import respaldos
 from app.auth.dependencias import usuario_actual
 from app.db import SesionDB
-from app.hora import hoy_bogota, limites_del_dia
+from app.hora import a_utc, hoy_bogota, limites_del_dia
+from app.inventario.esquemas import FechaUTC
 from app.inventario.existencias import cantidad_texto, estado_stock, existencias
 from app.inventario.modelos import Insumo, Modelo, Variante
 from app.inventario.productos import GRAVEDAD, sin_tildes
@@ -64,7 +66,13 @@ class PorRevisar(BaseModel):
     insumos: int
 
 
+class EstadoRespaldo(BaseModel):
+    atrasado: bool
+    ultimo: FechaUTC | None
+
+
 class Inicio(BaseModel):
+    respaldo: EstadoRespaldo
     ventas_hoy: VentasHoy
     ventas_mes: VentasMes
     vitrina: Vitrina
@@ -88,7 +96,7 @@ def _ventas(sesion: Session, desde: date, hasta: date) -> list[Pedido]:
 
 
 @router.get("/inicio")
-def inicio(sesion: SesionDB) -> Inicio:
+def inicio(sesion: SesionDB, request: Request) -> Inicio:
     hoy = hoy_bogota()
     de_hoy = _ventas(sesion, hoy, hoy)
     del_mes = _ventas(sesion, hoy.replace(day=1), hoy)
@@ -135,7 +143,13 @@ def inicio(sesion: SesionDB) -> Inicio:
             )
     avisos.sort(key=lambda a: (GRAVEDAD[a.estado], sin_tildes(a.nombre)))
 
+    config = request.app.state.config
+    lista = respaldos.listar(config)
     return Inicio(
+        respaldo=EstadoRespaldo(
+            atrasado=respaldos.atrasado(config),
+            ultimo=a_utc(lista[0].momento) if lista else None,
+        ),
         ventas_hoy=VentasHoy(
             total=sum(p.total for p in de_hoy), cantidad=len(de_hoy), por_canal=por_canal
         ),

@@ -127,7 +127,7 @@ El celular y el navegador de la Mac llegan al mismo servicio por el puerto 8080.
 | Interfaz | React + Vite + TypeScript, Tailwind CSS, compilada para Safari 17.6; manifiesto web para acceso directo en el iPhone | Una sola interfaz adaptable a Mac y celular |
 | API | Python 3.13 + FastAPI sobre Uvicorn, validación con Pydantic | Tipado, documentación automática de la API en /docs |
 | Datos | SQLite en modo WAL con SQLAlchemy 2 y migraciones con Alembic | Sin servidor aparte; un archivo fácil de respaldar |
-| Tareas | APScheduler dentro del mismo proceso | Avisos diarios y respaldos sin otro proceso |
+| Tareas | Una tarea de asyncio dentro del mismo proceso | Avisos diarios y respaldos sin otro proceso ni otra dependencia |
 | Fotos | Pillow: redimensiona a 1200 px y miniatura de 300 px | Fotos del celular de 4 MB quedan en ~200 KB |
 | Gráficas y exportes | ECharts empaquetado en el front; openpyxl para Excel | Funciona sin internet; datos portables |
 | Comprobantes | PDF imprimible con ReportLab, con el logo y los colores de la app | Trae ruedas precompiladas para Mac; WeasyPrint necesitaría Pango y Cairo instalados con Homebrew, que ya no da soporte oficial a Monterey |
@@ -327,7 +327,9 @@ La instalación la haces tú una sola vez, en persona o por videollamada, con un
 
 - Google Drive para escritorio sincroniza la carpeta LyA-Respaldos con su cuenta de Google (Preferencias → Mi Mac → Agregar carpeta), así las copias suben a la nube solas. Se respalda la copia, nunca la base viva: sincronizar un SQLite abierto puede dañarlo.
 
-- Restaurar: Ajustes → Respaldos → elegir fecha → confirmar.
+- Restaurar: Ajustes → Respaldos → elegir fecha → confirmar. Antes de cambiar nada se guarda un respaldo «Antes de restaurar», y se conservan el usuario y sus sesiones: quien restaura sigue con su contraseña de hoy y no tiene que volver a entrar. Un respaldo de una versión anterior se migra al restaurarlo.
+
+- Si la Mac estaba apagada o dormida a las 9:00 p. m., el respaldo se hace apenas el servicio vuelva a correr. Inicio avisa en «Para no olvidar» cuando el último tiene más de 2 días, y desde Ajustes se puede respaldar a mano o descargar cualquier copia.
 
 - Exportar a Excel cualquier listado (ventas, gastos, inventario) para el contador o para declarar.
 

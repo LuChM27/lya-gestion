@@ -13,6 +13,7 @@ def config_tmp(tmp_path) -> Config:
             "DATA_DIR": str(tmp_path / "datos"),
             "BACKUP_DIR": str(tmp_path / "respaldos"),
             "WEB_DIR": str(tmp_path / "web-inexistente"),
+            "RESPALDO_DIARIO": "0",
         }
     )
 

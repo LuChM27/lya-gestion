@@ -16,6 +16,7 @@ class Config:
     port: int = 8080
     nombre_local: str = "lya-tejidos"
     zona: str = "America/Bogota"
+    respaldo_diario: bool = True
 
     @classmethod
     def desde_entorno(cls, env: Mapping[str, str] = os.environ) -> "Config":
@@ -26,6 +27,7 @@ class Config:
             port=int(env.get("PORT", "8080")),
             nombre_local=env.get("NOMBRE_LOCAL", "lya-tejidos"),
             zona=env.get("TZ", "America/Bogota"),
+            respaldo_diario=env.get("RESPALDO_DIARIO", "1") != "0",
         )
         config.data_dir.mkdir(parents=True, exist_ok=True)
         config.backup_dir.mkdir(parents=True, exist_ok=True)

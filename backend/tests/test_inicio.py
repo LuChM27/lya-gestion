@@ -17,6 +17,15 @@ def test_inicio_sin_datos(autenticado):
     assert datos["vitrina"] == {"piezas": 0, "valor": 0}
     assert datos["avisos"] == []
     assert datos["por_revisar"] == {"productos": 0, "insumos": 0}
+    assert datos["respaldo"] == {"atrasado": True, "ultimo": None}
+
+
+def test_inicio_avisa_respaldo_al_dia(autenticado):
+    nombre = autenticado.post("/api/respaldos").json()["nombre"]
+    respaldo = autenticado.get("/api/inicio").json()["respaldo"]
+    assert respaldo["atrasado"] is False
+    assert respaldo["ultimo"] == autenticado.get("/api/respaldos").json()["respaldos"][0]["fecha"]
+    assert nombre.endswith("-manual.zip")
 
 
 def test_inicio_cuenta_ventas_vitrina_y_avisos(autenticado, vitrina):  # noqa: F811

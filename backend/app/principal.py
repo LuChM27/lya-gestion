@@ -1,11 +1,12 @@
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app import inicio, red, salud
+from app import inicio, red, respaldos, salud
 from app.auth import rutas as rutas_auth
 from app.auth.limitador import Limitador
 from app.clientes import clientes
@@ -25,7 +26,14 @@ DATO_INVALIDO = "Revisa los datos: hay un valor que no es válido."
 def crear_app(config: Config) -> FastAPI:
     @asynccontextmanager
     async def ciclo_de_vida(app: FastAPI):
+        tarea = None
+        if config.respaldo_diario:
+            tarea = asyncio.create_task(respaldos.respaldar_cada_noche(config))
         yield
+        if tarea is not None:
+            tarea.cancel()
+            with suppress(asyncio.CancelledError):
+                await tarea
         app.state.motor.dispose()
 
     app = FastAPI(title="L&A Gestión", version=VERSION, lifespan=ciclo_de_vida)
@@ -46,6 +54,7 @@ def crear_app(config: Config) -> FastAPI:
     app.include_router(cuentas.router)
     app.include_router(movimientos.router)
     app.include_router(compras.router)
+    app.include_router(respaldos.router)
 
     @app.exception_handler(ErrorInventario)
     async def error_de_inventario(_: Request, error: ErrorInventario) -> JSONResponse:

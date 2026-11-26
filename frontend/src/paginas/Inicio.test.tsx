@@ -13,6 +13,7 @@ function montar() {
 }
 
 const DATOS = {
+  respaldo: { atrasado: false, ultimo: "2026-11-25T02:00:00Z" },
   ventas_hoy: { total: 240000, cantidad: 1, por_canal: { instagram: 1 } },
   ventas_mes: { total: 2480000, cantidad: 18, mes: "octubre" },
   vitrina: { piezas: 46, valor: 3920000 },
@@ -49,6 +50,7 @@ test("el primer día muestra ceros y todo en orden", async () => {
   simularApi({
     "GET /api/inicio": {
       cuerpo: {
+        respaldo: { atrasado: false, ultimo: null },
         ventas_hoy: { total: 0, cantidad: 0, por_canal: {} },
         ventas_mes: { total: 0, cantidad: 0, mes: "octubre" },
         vitrina: { piezas: 0, valor: 0 },
@@ -78,4 +80,20 @@ test("los conteos usan el total aunque los avisos lleguen cortados en 5", async 
   montar();
   expect(await screen.findByText("Tienes 8 avisos para revisar.")).toBeInTheDocument();
   expect(screen.getByText("3 por revisar")).toBeInTheDocument();
+});
+
+test("avisa cuando el último respaldo tiene más de 2 días", async () => {
+  simularApi({ "GET /api/inicio": { cuerpo: { ...DATOS, respaldo: { atrasado: true, ultimo: "2026-11-20T02:00:00Z" } } } });
+  montar();
+  const aviso = await screen.findByRole("link", { name: /Haz un respaldo de tus datos/ });
+  expect(aviso).toHaveAttribute("href", "/ajustes");
+  expect(screen.getByText("El último es del 19/11/2026")).toBeInTheDocument();
+  expect(screen.getByText("Tienes 3 avisos para revisar.")).toBeInTheDocument();
+});
+
+test("sin respaldo atrasado no hay aviso de respaldo", async () => {
+  simularApi({ "GET /api/inicio": { cuerpo: DATOS } });
+  montar();
+  await screen.findByRole("heading", { name: "Para no olvidar" });
+  expect(screen.queryByText("Haz un respaldo de tus datos")).not.toBeInTheDocument();
 });
