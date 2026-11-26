@@ -8,6 +8,7 @@ from app.db import crear_motor
 from app.hora import hoy_bogota
 from app.principal import DATO_INVALIDO
 from app.ventas.modelos import Pago, Pedido, PedidoItem, Transaccion
+from tests.test_clientes import crear_cliente
 from tests.test_productos import crear_modelo, crear_variante, mover
 
 NEQUI = 2
@@ -288,3 +289,31 @@ def test_anular_registra_movimiento_de_anulacion(autenticado, vitrina):
     ]
     assert tipos[:2] == ["anulacion", "venta"]
     assert "devolucion" not in tipos
+
+
+def test_venta_sin_clienta_va_a_mostrador(autenticado, vitrina):
+    r = vender(autenticado, [item(vitrina["rosa"])])
+    assert r.json()["cliente"] == "Cliente de mostrador"
+
+
+def test_venta_con_clienta(autenticado, vitrina):
+    v = crear_cliente(autenticado).json()
+    r = vender(autenticado, [item(vitrina["rosa"])], cliente_id=v["id"])
+    assert r.status_code == 201
+    assert r.json()["cliente"] == "Valentina Ríos"
+    f = autenticado.get(f"/api/clientes/{v['id']}").json()
+    assert f["compras"] == 1
+    assert f["historial"][0]["id"] == r.json()["id"]
+
+
+def test_venta_con_clienta_archivada_no_deja_nada(autenticado, vitrina, config_tmp):
+    v = crear_cliente(autenticado).json()
+    autenticado.delete(f"/api/clientes/{v['id']}")
+    for cliente_id in (v["id"], 9999):
+        r = vender(autenticado, [item(vitrina["rosa"])], cliente_id=cliente_id)
+        assert r.status_code == 422
+        assert r.json()["detail"] == "Elige una clienta de la lista."
+    assert contar(config_tmp, Pedido) == 0
+    assert contar(config_tmp, Pago) == 0
+    assert contar(config_tmp, Transaccion) == 0
+    assert existencia_de(autenticado, vitrina["modelo"]["id"], vitrina["rosa"]) == 3

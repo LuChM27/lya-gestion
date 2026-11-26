@@ -48,7 +48,7 @@ export default function Productos() {
       acciones={
         <>
           <div className="hidden md:block">
-            <BotonPastilla a="/insumos" icono={IconoVentas}>
+            <BotonPastilla a="/compras/nueva" icono={IconoVentas}>
               Registrar compra de insumos
             </BotonPastilla>
           </div>

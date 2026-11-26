@@ -1,4 +1,4 @@
-"""Ventas y dinero: cuentas, transacciones, clientes, pedidos con sus ítems y pagos."""
+"""Ventas y dinero: cuentas, transacciones, gastos fijos, clientes, pedidos con sus ítems y pagos."""
 
 from datetime import UTC, datetime
 
@@ -28,6 +28,7 @@ class Categoria(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     nombre: Mapped[str] = mapped_column(String(60), unique=True)
     tipo: Mapped[str] = mapped_column(String(10))
+    activa: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Cliente(Base):
@@ -43,6 +44,7 @@ class Cliente(Base):
     cedula: Mapped[str | None] = mapped_column(String(20))
     notas: Mapped[str | None] = mapped_column(String(500))
     es_mostrador: Mapped[bool] = mapped_column(Boolean, default=False)
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
     creado: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -88,10 +90,29 @@ class Transaccion(Base):
     __tablename__ = "transaccion"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
     tipo: Mapped[str] = mapped_column(String(15))
     monto: Mapped[int] = mapped_column(Integer)
     descripcion: Mapped[str] = mapped_column(String(200))
     cuenta_id: Mapped[int] = mapped_column(ForeignKey("cuenta.id"))
     categoria_id: Mapped[int | None] = mapped_column(ForeignKey("categoria.id"))
     pago_id: Mapped[int | None] = mapped_column(ForeignKey("pago.id"), index=True)
+    cuenta_destino_id: Mapped[int | None] = mapped_column(ForeignKey("cuenta.id"))
+    compra_id: Mapped[int | None] = mapped_column(ForeignKey("compra.id"), index=True)
+    gasto_fijo_id: Mapped[int | None] = mapped_column(ForeignKey("gasto_fijo.id"))
+    nota: Mapped[str | None] = mapped_column(String(200))
+
+
+class GastoFijo(Base):
+    __tablename__ = "gasto_fijo"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(80))
+    monto: Mapped[int] = mapped_column(Integer)
+    categoria_id: Mapped[int] = mapped_column(ForeignKey("categoria.id"))
+    cuenta_id: Mapped[int | None] = mapped_column(ForeignKey("cuenta.id"))
+    activo: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+# La tabla compra debe estar registrada para las llaves foráneas de este módulo.
+from app.compras import modelos as _compras  # noqa: F401

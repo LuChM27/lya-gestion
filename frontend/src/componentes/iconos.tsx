@@ -96,3 +96,33 @@ export const IconoBolso = icono(
   </>,
   1.4,
 );
+// Clientes, WhatsApp, editar y cerrar: docs/mockups/fuentes/clientes-mac.html y cuentas-celular.html.
+export const IconoClientes = icono(
+  <>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" />
+  </>,
+);
+export const IconoWhatsapp = icono(
+  <>
+    <path d="M4 20l1.4-4.2A8 8 0 1 1 8.4 19z" />
+    <path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1.2-1.4-2-1-1 .8a4 4 0 0 1-2.1-2.1l.8-1-1-2z" />
+  </>,
+  2,
+);
+export const IconoEditar = icono(
+  <>
+    <path d="M4 20h4L19 9l-4-4L4 16z" />
+    <path d="m13.5 6.5 4 4" />
+  </>,
+);
+export const IconoCerrar = icono(<path d="M6 6l12 12M18 6 6 18" />, 2);
+// Mis cuentas y Transferir: docs/mockups/fuentes/cuentas-mac.html.
+export const IconoCuentas = icono(
+  <>
+    <rect x="3" y="6" width="18" height="14" rx="3" />
+    <path d="M3 10h18M16 15h2" />
+  </>,
+);
+export const IconoTransferir = icono(<path d="M7 7h13l-4-4M17 17H4l4 4" />);

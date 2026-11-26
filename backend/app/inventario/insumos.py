@@ -42,10 +42,17 @@ def precio_vigente(sesion: Session, insumo_id: int) -> Decimal | None:
     )
 
 
-def _nuevo_precio(sesion: Session, insumo_id: int, precio: Decimal, origen: str) -> None:
+def _nuevo_precio(
+    sesion: Session, insumo_id: int, precio: Decimal, origen: str, compra_id: int | None = None
+) -> None:
     precio = precio.quantize(CENTAVO)
-    if precio_vigente(sesion, insumo_id) != precio:
-        sesion.add(PrecioInsumo(insumo_id=insumo_id, precio_unitario=precio, origen=origen))
+    # Una compra siempre deja su precio: si se anula otra compra al mismo precio, este sigue vigente.
+    if compra_id is not None or precio_vigente(sesion, insumo_id) != precio:
+        sesion.add(
+            PrecioInsumo(
+                insumo_id=insumo_id, precio_unitario=precio, origen=origen, compra_id=compra_id
+            )
+        )
         sesion.flush()
 
 

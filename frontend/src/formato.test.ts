@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { cantidad, fecha, fechaLarga, leerNumero, pesos } from "./formato";
+import { cantidad, fecha, fechaLarga, leerNumero, pesos, telefono } from "./formato";
 
 test.each([
   ["12,5", 12.5],
@@ -39,4 +39,9 @@ test("fecha en Bogotá como DD/MM/AAAA", () => {
 test("fecha larga en Bogotá con día de la semana", () => {
   expect(fechaLarga("2026-10-29T15:00:00Z")).toBe("Jueves, 29 de octubre");
   expect(fechaLarga("2026-10-30T03:00:00Z")).toBe("Jueves, 29 de octubre");
+});
+
+test("teléfono colombiano en tres grupos y extranjero con +", () => {
+  expect(telefono("573004567812")).toBe("300 456 7812");
+  expect(telefono("14155550123")).toBe("+14155550123");
 });

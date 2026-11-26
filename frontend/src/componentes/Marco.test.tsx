@@ -13,6 +13,7 @@ function montar(ruta: string) {
         <Route element={<Marco />}>
           <Route index element={<p>Inicio</p>} />
           <Route path="productos/:id" element={<p>Ficha</p>} />
+          <Route path="clientes/:id" element={<p>Clienta</p>} />
           <Route path="vender" element={<p>Venta rápida</p>} />
           <Route path="mas" element={<Mas />} />
         </Route>
@@ -34,7 +35,7 @@ test("barra inferior: cuatro secciones y el + de nueva venta", () => {
 test("menú lateral con logo y secciones que existen", () => {
   montar("/");
   const menu = within(screen.getByRole("navigation", { name: "Menú" }));
-  expect(menu.getAllByRole("link").map((a) => a.textContent)).toEqual(["Inicio", "Ventas", "Inventario"]);
+  expect(menu.getAllByRole("link").map((a) => a.textContent)).toEqual(["Inicio", "Ventas", "Inventario", "Clientes", "Mis cuentas"]);
   expect(screen.getAllByRole("img", { name: "L&A Tejidos" }).length).toBeGreaterThan(0);
 });
 
@@ -63,4 +64,22 @@ test("Más ofrece entrar desde el celular y salir", async () => {
   expect(await pagina.findByText(/lya\.local/)).toBeInTheDocument();
   await userEvent.click(pagina.getByRole("button", { name: "Salir" }));
   expect(await screen.findByText("Pantalla de entrar")).toBeInTheDocument();
+});
+
+test("Clientes queda activa en la ficha de una clienta", () => {
+  montar("/clientes/5");
+  const menu = within(screen.getByRole("navigation", { name: "Menú" }));
+  expect(menu.getByRole("link", { name: "Clientes" })).toHaveAttribute("aria-current", "page");
+});
+
+test("Más lleva a Clientes", () => {
+  montar("/mas");
+  const pagina = within(screen.getByRole("main"));
+  expect(pagina.getByRole("link", { name: /Clientes/ })).toHaveAttribute("href", "/clientes");
+});
+
+test("Más lleva a Mis cuentas", () => {
+  montar("/mas");
+  const pagina = within(screen.getByRole("main"));
+  expect(pagina.getByRole("link", { name: /Mis cuentas/ })).toHaveAttribute("href", "/cuentas");
 });

@@ -106,6 +106,7 @@ def registrar_movimiento(
     unidad: str | None = None,
     pedido_id: int | None = None,
     fecha: datetime | None = None,
+    compra_id: int | None = None,
 ) -> MovimientoInventario:
     if tipo not in TIPOS:
         raise ValueError(f"Tipo de movimiento desconocido: {tipo}")
@@ -120,6 +121,7 @@ def registrar_movimiento(
         costo_unitario=costo_unitario,
         nota=nota,
         pedido_id=pedido_id,
+        compra_id=compra_id,
     )
     if fecha is not None:
         movimiento.fecha = fecha

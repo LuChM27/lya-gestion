@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { enviar, ErrorApi, pedir } from "../api";
 import FormularioInsumo from "../componentes/FormularioInsumo";
-import { IconoSumar } from "../componentes/iconos";
+import { IconoSumar, IconoVentas } from "../componentes/iconos";
 import { BotonPastilla, BotonPrincipal, Buscador, Etiqueta, Pastillas, Vacio } from "../componentes/ui";
 import { cantidad, precio } from "../formato";
 import { TIPOS_INSUMO, type Insumo } from "../inventario";
@@ -46,11 +46,18 @@ export default function Insumos() {
   return (
     <Inventario
       acciones={
-        !creando && (
-          <BotonPrincipal icono={IconoSumar} onClick={() => setCreando(true)}>
-            Nuevo insumo
-          </BotonPrincipal>
-        )
+        <>
+          <div className="hidden md:block">
+            <BotonPastilla a="/compras/nueva" icono={IconoVentas}>
+              Registrar compra de insumos
+            </BotonPastilla>
+          </div>
+          {!creando && (
+            <BotonPrincipal icono={IconoSumar} onClick={() => setCreando(true)}>
+              Nuevo insumo
+            </BotonPrincipal>
+          )}
+        </>
       }
       filtros={hayLista && <Pastillas etiqueta="Tipo" opciones={[["", "Todos"] as const, ...TIPOS_INSUMO]} valor={tipo} alElegir={setTipo} alto="chico" />}
     >

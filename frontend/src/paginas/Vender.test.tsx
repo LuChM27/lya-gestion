@@ -29,12 +29,14 @@ const CUENTAS = [
   { id: 3, nombre: "Daviplata" },
 ];
 const VENTA = { id: 12, numero: "0012" };
+const VALENTINA = { id: 5, nombre: "Valentina Ríos", whatsapp: "573004567812", instagram: "@valen.tejidos", total_comprado: 0, activo: true };
 
 function api(extra = {}) {
   return simularApi({
     "GET /api/ventas/catalogo": { cuerpo: [ROSA, NEGRO] },
     "GET /api/cuentas": { cuerpo: CUENTAS },
     "POST /api/ventas": { estado: 201, cuerpo: VENTA },
+    "GET /api/clientes": { cuerpo: [VALENTINA] },
     ...extra,
   });
 }
@@ -238,4 +240,101 @@ test("si la vitrina no carga, igual se puede volver", async () => {
   expect(await screen.findByText("No se pudo cargar la vitrina.")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Volver" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { level: 1, name: "Venta rápida" })).toBeInTheDocument();
+});
+
+test("por defecto vende a mostrador", async () => {
+  const llamadas = api();
+  montar();
+  await userEvent.click(await producto("Rosa palo"));
+  expect(screen.getByRole("button", { name: /Cliente de mostrador/ })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
+  await screen.findByText("Detalle 12");
+  expect(enviado(llamadas)).not.toHaveProperty("cliente_id");
+});
+
+test("elige una clienta", async () => {
+  const llamadas = api();
+  montar();
+  await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(screen.getByRole("button", { name: /Cliente de mostrador/ }));
+  const hoja = within(screen.getByRole("dialog", { name: "¿A quién le vendiste?" }));
+  await userEvent.click(await hoja.findByRole("button", { name: /Valentina Ríos/ }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Valentina Ríos/ })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
+  await screen.findByText("Detalle 12");
+  expect(enviado(llamadas)).toMatchObject({ cliente_id: 5 });
+});
+
+test("crea una clienta desde la venta", async () => {
+  const nueva = { ...VALENTINA, id: 9, nombre: "Camila Mejía", direccion: null, ciudad: null, correo: null, cedula: null, notas: null, enlace_whatsapp: "", creado: "2026-11-25T15:00:00Z", compras: 0, por_cobrar: 0, promedio: 0, canal_frecuente: null, ultima_compra: null, historial: [] };
+  api({ "POST /api/clientes": { estado: 201, cuerpo: nueva } });
+  montar();
+  await producto("Rosa palo");
+  await userEvent.click(screen.getByRole("button", { name: /Cliente de mostrador/ }));
+  const hoja = within(screen.getByRole("dialog", { name: "¿A quién le vendiste?" }));
+  await userEvent.click(hoja.getByRole("button", { name: "Nueva clienta" }));
+  await userEvent.type(hoja.getByLabelText("Nombre"), "Camila Mejía");
+  await userEvent.type(hoja.getByLabelText("WhatsApp"), "312 778 0011");
+  await userEvent.click(hoja.getByRole("button", { name: "Guardar clienta" }));
+  expect(await screen.findByRole("button", { name: /Camila Mejía/ })).toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("vuelve a mostrador después de guardar", async () => {
+  api();
+  const { unmount } = montar();
+  await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(screen.getByRole("button", { name: "Feria" }));
+  await userEvent.click(screen.getByRole("button", { name: /Cliente de mostrador/ }));
+  await userEvent.click(await screen.findByRole("button", { name: /Valentina Ríos/ }));
+  await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
+  await screen.findByText("Detalle 12");
+  unmount();
+  montar();
+  await producto("Rosa palo");
+  expect(screen.getByRole("button", { name: /Cliente de mostrador/ })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Feria" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("cierra con Escape", async () => {
+  api();
+  montar();
+  await producto("Rosa palo");
+  const chip = screen.getByRole("button", { name: /Cliente de mostrador/ });
+  await userEvent.click(chip);
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(chip).toHaveFocus();
+});
+
+test("error de clienta archivada", async () => {
+  api({ "POST /api/ventas": { estado: 422, cuerpo: { detail: "Elige una clienta de la lista." } } });
+  montar();
+  await userEvent.click(await producto("Rosa palo"));
+  await userEvent.click(screen.getByRole("button", { name: /Cliente de mostrador/ }));
+  await userEvent.click(await screen.findByRole("button", { name: /Valentina Ríos/ }));
+  await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
+  const franja = within(screen.getByRole("region", { name: "Total" }));
+  expect(await franja.findByText("Elige una clienta de la lista.")).toBeInTheDocument();
+});
+
+test("la hoja busca por Instagram y por número sin traer de más", async () => {
+  const ana = { ...VALENTINA, id: 6, nombre: "Ana Pérez", whatsapp: "573152209087", instagram: null };
+  api({ "GET /api/clientes": { cuerpo: [VALENTINA, ana] } });
+  montar();
+  await producto("Rosa palo");
+  await userEvent.click(screen.getByRole("button", { name: /Cliente de mostrador/ }));
+  const hoja = within(screen.getByRole("dialog"));
+  const buscar = hoja.getByRole("searchbox");
+  expect(buscar).toHaveFocus();
+  await hoja.findByRole("button", { name: /Ana Pérez/ });
+  const nombres = () => hoja.queryAllByRole("button", { name: /Valentina|Ana/ }).map((b) => b.textContent);
+  fireEvent.change(buscar, { target: { value: "@valen" } });
+  expect(nombres()).toEqual([expect.stringContaining("Valentina Ríos")]);
+  fireEvent.change(buscar, { target: { value: "57" } });
+  expect(nombres()).toEqual([]);
+  fireEvent.change(buscar, { target: { value: "315 220" } });
+  expect(nombres()).toEqual([expect.stringContaining("Ana Pérez")]);
 });

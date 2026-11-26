@@ -13,7 +13,7 @@ Toda pantalla nueva o modificada se ve como ellas. Si una pantalla no tiene mock
 
 ## Antes de escribir código
 
-1. **La fuente de verdad es el código de los mockups**, en `docs/mockups/fuentes/*.html`: inicio-mac, inventario-mac, pedidos-mac, login-mac, inicio-celular y venta-celular. Son HTML legible, con cada estilo en línea.
+1. **La fuente de verdad es el código de los mockups**, en `docs/mockups/fuentes/*.html`: inicio-mac, inventario-mac, pedidos-mac, login-mac, inicio-celular, venta-celular, clientes-mac, cuentas-mac, compra-mac y cuentas-celular. Son HTML legible, con cada estilo en línea.
    - **Copia los valores exactos:** colores, tamaños, pesos, rellenos, radios, sombras, bordes y los trazos SVG de los íconos.
    - **No los aproximes «a ojo»:** una pantalla que solo copia la estructura se ve genérica, y el usuario lo rechazó.
 2. **Íconos:** son los SVG propios de los mockups (trazo 1,8–2,6, `viewBox 0 0 24 24`) y están en `frontend/src/componentes/iconos.tsx`. Si falta uno, cópialo de las fuentes; no uses librerías de íconos.

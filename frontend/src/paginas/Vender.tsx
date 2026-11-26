@@ -1,7 +1,9 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { enviar, ErrorApi, pedir } from "../api";
+import type { ClienteResumen } from "../clientes";
 import { Campo, MensajeError } from "../componentes/Formulario";
+import HojaCliente from "../componentes/HojaCliente";
 import { IconoListo, IconoPersona, IconoVolver } from "../componentes/iconos";
 import { BotonPrincipal, Buscador, FotoProducto, Pastillas, Vacio } from "../componentes/ui";
 import { leerNumero, pesos } from "../formato";
@@ -47,6 +49,10 @@ export default function Vender() {
   const [aviso, setAviso] = useState("");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
+  // null = Cliente de mostrador. No se recuerda: cada venta empieza en mostrador.
+  const [clienta, setClienta] = useState<ClienteResumen | null>(null);
+  const [eligiendo, setEligiendo] = useState(false);
+  const chip = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     Promise.all([pedir<CatalogoItem[]>("/api/ventas/catalogo"), pedir<Cuenta[]>("/api/cuentas")])
@@ -95,6 +101,7 @@ export default function Vender() {
         fecha: fecha && fecha !== hoyBogota() ? fecha : null,
         nota: null,
         items: lineas.map((l) => ({ variante_id: l.item.variante_id, cantidad: l.n })),
+        ...(clienta ? { cliente_id: clienta.id } : {}),
       });
       recordar("venta.canal", canal);
       recordar("venta.cuenta", cuenta);
@@ -171,119 +178,142 @@ export default function Vender() {
   });
 
   return (
-    <form onSubmit={guardar} noValidate className="mx-auto flex w-full max-w-[720px] flex-col gap-[18px] pb-[calc(170px+env(safe-area-inset-bottom))] md:pb-0">
-      {encabezado}
+    <>
+      <form onSubmit={guardar} noValidate className="mx-auto flex w-full max-w-[720px] flex-col gap-[18px] pb-[calc(170px+env(safe-area-inset-bottom))] md:pb-0">
+        {encabezado}
 
-      <Paso
-        numero={1}
-        titulo="¿Qué vendiste?"
-        extra={
-          <button type="button" aria-expanded={buscando} onClick={() => setBuscando((b) => !b)} className={ENLACE}>
-            Buscar
-          </button>
-        }
-      >
-        {buscando && <Buscador valor={buscar} alCambiar={setBuscar} placeholder="Modelo, color o código" />}
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {visibles.map((i) => {
-            const enVenta = carrito[i.variante_id] ?? 0;
-            return (
-              <button
-                key={i.variante_id}
-                type="button"
-                aria-pressed={enVenta > 0}
-                onClick={() => cambiar(i, 1)}
-                className={`relative flex flex-col gap-2 rounded-[20px] border-2 bg-superficie px-2 pt-2 pb-3 text-left text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
-                  enVenta ? "border-rosa shadow-elegida" : "border-borde"
-                }`}
-              >
-                <FotoProducto foto={i.foto} categoria={i.categoria} nombre={i.nombre} className="h-[78px] rounded-[14px]" icono={34} />
-                <span className="flex flex-col gap-px px-1">
-                  <span className="line-clamp-2 text-[13px] leading-[1.25] font-extrabold">{i.nombre}</span>{" "}
-                  <span className="text-[13px] font-bold text-tinta-media">{i.color}</span>{" "}
-                  <span className="text-[13px] font-bold text-suave">{pesos(i.precio)}</span>{" "}
-                  <span className="text-xs text-suave">{`${i.existencia} en vitrina`}</span>
-                </span>
-                {enVenta > 0 && (
-                  <span aria-hidden className="absolute top-3.5 right-3.5 flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-white bg-rosa text-xs font-extrabold text-white">
-                    {enVenta === 1 ? <IconoListo tamano={14} /> : enVenta}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {aviso && (
-          <p role="alert" className="text-sm font-bold text-error">
-            {aviso}
-          </p>
-        )}
-        {lineas.length > 0 && (
-          <ul aria-label="En esta venta" className="flex flex-col gap-2">
-            {lineas.map(({ item, n }) => {
-              const nombre = `${item.nombre} ${item.color}`;
+        <Paso
+          numero={1}
+          titulo="¿Qué vendiste?"
+          extra={
+            <button type="button" aria-expanded={buscando} onClick={() => setBuscando((b) => !b)} className={ENLACE}>
+              Buscar
+            </button>
+          }
+        >
+          {buscando && <Buscador valor={buscar} alCambiar={setBuscar} placeholder="Modelo, color o código" />}
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {visibles.map((i) => {
+              const enVenta = carrito[i.variante_id] ?? 0;
               return (
-                <li key={item.variante_id} className="flex items-center gap-2 rounded-[18px] border border-borde bg-superficie py-1.5 pr-1.5 pl-3.5">
-                  <span className="min-w-0 flex-1 truncate text-sm font-extrabold">{`${item.nombre} · ${item.color}`}</span>
-                  <button type="button" aria-label={`Quitar uno de ${nombre}`} onClick={() => cambiar(item, -1)} className="h-11 w-11 rounded-full border-[1.5px] border-borde-campo text-xl font-extrabold text-tinta-media">
-                    −
-                  </button>
-                  <span className="w-6 text-center font-extrabold">{n}</span>
-                  <button type="button" aria-label={`Agregar uno de ${nombre}`} onClick={() => cambiar(item, 1)} className="h-11 w-11 rounded-full border-[1.5px] border-borde-campo text-xl font-extrabold text-tinta-media">
-                    +
-                  </button>
-                </li>
+                <button
+                  key={i.variante_id}
+                  type="button"
+                  aria-pressed={enVenta > 0}
+                  onClick={() => cambiar(i, 1)}
+                  className={`relative flex flex-col gap-2 rounded-[20px] border-2 bg-superficie px-2 pt-2 pb-3 text-left text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
+                    enVenta ? "border-rosa shadow-elegida" : "border-borde"
+                  }`}
+                >
+                  <FotoProducto foto={i.foto} categoria={i.categoria} nombre={i.nombre} className="h-[78px] rounded-[14px]" icono={34} />
+                  <span className="flex flex-col gap-px px-1">
+                    <span className="line-clamp-2 text-[13px] leading-[1.25] font-extrabold">{i.nombre}</span>{" "}
+                    <span className="text-[13px] font-bold text-tinta-media">{i.color}</span>{" "}
+                    <span className="text-[13px] font-bold text-suave">{pesos(i.precio)}</span>{" "}
+                    <span className="text-xs text-suave">{`${i.existencia} en vitrina`}</span>
+                  </span>
+                  {enVenta > 0 && (
+                    <span aria-hidden className="absolute top-3.5 right-3.5 flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-white bg-rosa text-xs font-extrabold text-white">
+                      {enVenta === 1 ? <IconoListo tamano={14} /> : enVenta}
+                    </span>
+                  )}
+                </button>
               );
             })}
-          </ul>
-        )}
-      </Paso>
-
-      <Paso numero={2} titulo="¿Por dónde te compró?">
-        <Pastillas etiqueta="Canal" opciones={CANALES} valor={canal} alElegir={setCanal} />
-      </Paso>
-
-      <Paso numero={3} titulo="¿Cómo te pagó?">
-        <Pastillas etiqueta="Pagó en" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={setCuenta} />
-      </Paso>
-
-      <div>
-        <button type="button" aria-expanded={opciones} onClick={() => setOpciones((o) => !o)} className={`${ENLACE} h-11`}>
-          Más opciones
-        </button>
-        {opciones && (
-          <div className="mt-2 grid gap-x-4 sm:grid-cols-2">
-            <Campo etiqueta="Descuento (opcional)" inputMode="numeric" required={false} value={descuento} onChange={(e) => { setDescuento(e.target.value); setError(""); }} />
-            <Campo etiqueta="Fecha" type="date" max={hoy} value={fecha ?? hoy} onChange={(e) => setFecha(e.target.value || null)} />
           </div>
-        )}
-      </div>
+          {aviso && (
+            <p role="alert" className="text-sm font-bold text-error">
+              {aviso}
+            </p>
+          )}
+          {lineas.length > 0 && (
+            <ul aria-label="En esta venta" className="flex flex-col gap-2">
+              {lineas.map(({ item, n }) => {
+                const nombre = `${item.nombre} ${item.color}`;
+                return (
+                  <li key={item.variante_id} className="flex items-center gap-2 rounded-[18px] border border-borde bg-superficie py-1.5 pr-1.5 pl-3.5">
+                    <span className="min-w-0 flex-1 truncate text-sm font-extrabold">{`${item.nombre} · ${item.color}`}</span>
+                    <button type="button" aria-label={`Quitar uno de ${nombre}`} onClick={() => cambiar(item, -1)} className="h-11 w-11 rounded-full border-[1.5px] border-borde-campo text-xl font-extrabold text-tinta-media">
+                      −
+                    </button>
+                    <span className="w-6 text-center font-extrabold">{n}</span>
+                    <button type="button" aria-label={`Agregar uno de ${nombre}`} onClick={() => cambiar(item, 1)} className="h-11 w-11 rounded-full border-[1.5px] border-borde-campo text-xl font-extrabold text-tinta-media">
+                      +
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Paso>
 
-      <section
-        aria-label="Total"
-        className="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-3 rounded-t-[28px] bg-superficie px-5 pt-4 pb-[max(22px,env(safe-area-inset-bottom))] shadow-franja md:sticky md:bottom-4 md:rounded-[28px] md:pb-5"
-      >
-        <MensajeError texto={error} />
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-bold text-suave">{vacia ? "Nada elegido aún" : unidades === 1 ? "1 producto" : `${unidades} productos`}</span>
-            <span className="text-[26px] font-extrabold tracking-[-0.01em]">{pesos(Math.max(total, 0))}</span>
-          </div>
-          <span className="flex items-center gap-1.5 rounded-full bg-rosa-claro px-3 py-2 text-[13px] font-extrabold text-rosa-oscuro">
-            <IconoPersona tamano={16} />
-            Cliente de mostrador
-          </span>
+        <Paso numero={2} titulo="¿Por dónde te compró?">
+          <Pastillas etiqueta="Canal" opciones={CANALES} valor={canal} alElegir={setCanal} />
+        </Paso>
+
+        <Paso numero={3} titulo="¿Cómo te pagó?">
+          <Pastillas etiqueta="Pagó en" opciones={cuentas.map((c) => [String(c.id), c.nombre] as const)} valor={cuenta} alElegir={setCuenta} />
+        </Paso>
+
+        <div>
+          <button type="button" aria-expanded={opciones} onClick={() => setOpciones((o) => !o)} className={`${ENLACE} h-11`}>
+            Más opciones
+          </button>
+          {opciones && (
+            <div className="mt-2 grid gap-x-4 sm:grid-cols-2">
+              <Campo etiqueta="Descuento (opcional)" inputMode="numeric" required={false} value={descuento} onChange={(e) => { setDescuento(e.target.value); setError(""); }} />
+              <Campo etiqueta="Fecha" type="date" max={hoy} value={fecha ?? hoy} onChange={(e) => setFecha(e.target.value || null)} />
+            </div>
+          )}
         </div>
-        <button
-          type="submit"
-          disabled={vacia || enviando}
-          className={`h-14 rounded-full text-[17px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
-            vacia ? "bg-borde text-apagado" : "bg-rosa text-white shadow-boton-grande"
-          }`}
+
+        <section
+          aria-label="Total"
+          className="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-3 rounded-t-[28px] bg-superficie px-5 pt-4 pb-[max(22px,env(safe-area-inset-bottom))] shadow-franja md:sticky md:bottom-4 md:rounded-[28px] md:pb-5"
         >
-          {vacia ? "Elige un producto" : "Guardar venta"}
-        </button>
-      </section>
-    </form>
+          <MensajeError texto={error} />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[13px] font-bold text-suave">{vacia ? "Nada elegido aún" : unidades === 1 ? "1 producto" : `${unidades} productos`}</span>
+              <span className="text-[26px] font-extrabold tracking-[-0.01em]">{pesos(Math.max(total, 0))}</span>
+            </div>
+            <button
+              ref={chip}
+              type="button"
+              onClick={() => setEligiendo(true)}
+              aria-haspopup="dialog"
+              className="flex min-h-11 max-w-[55%] items-center gap-1.5 rounded-full bg-rosa-claro px-3 py-2 text-[13px] font-extrabold text-rosa-oscuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa"
+            >
+              <IconoPersona tamano={16} className="shrink-0" />
+              <span className="truncate">{clienta ? clienta.nombre : "Cliente de mostrador"}</span>
+            </button>
+          </div>
+          <button
+            type="submit"
+            disabled={vacia || enviando}
+            className={`h-14 rounded-full text-[17px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rosa ${
+              vacia ? "bg-borde text-apagado" : "bg-rosa text-white shadow-boton-grande"
+            }`}
+          >
+            {vacia ? "Elige un producto" : "Guardar venta"}
+          </button>
+        </section>
+      </form>
+      {eligiendo && (
+        <HojaCliente
+          elegida={clienta}
+          alElegir={(c) => {
+            setClienta(c);
+            setError("");
+            setEligiendo(false);
+            chip.current?.focus();
+          }}
+          alCerrar={() => {
+            setEligiendo(false);
+            chip.current?.focus();
+          }}
+        />
+      )}
+    </>
   );
 }

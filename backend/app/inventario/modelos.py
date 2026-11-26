@@ -71,6 +71,7 @@ class PrecioInsumo(Base):
     precio_unitario: Mapped[Decimal] = mapped_column(PRECIO)
     desde: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     origen: Mapped[str] = mapped_column(String(20))
+    compra_id: Mapped[int | None] = mapped_column(ForeignKey("compra.id"), index=True)
 
 
 class MovimientoInventario(Base):
@@ -90,3 +91,8 @@ class MovimientoInventario(Base):
     variante_id: Mapped[int | None] = mapped_column(ForeignKey("variante.id"), index=True)
     insumo_id: Mapped[int | None] = mapped_column(ForeignKey("insumo.id"), index=True)
     pedido_id: Mapped[int | None] = mapped_column(ForeignKey("pedido.id"), index=True)
+    compra_id: Mapped[int | None] = mapped_column(ForeignKey("compra.id"), index=True)
+
+
+# La tabla compra debe estar registrada para las llaves foráneas de este módulo.
+from app.compras import modelos as _compras  # noqa: F401

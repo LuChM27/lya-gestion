@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ErrorApi, pedir } from "./api";
+import Categorias from "./paginas/Categorias";
+import Clientes from "./paginas/Clientes";
+import Compra from "./paginas/Compra";
+import Compras from "./paginas/Compras";
 import CrearCuenta from "./paginas/CrearCuenta";
+import Cuentas from "./paginas/Cuentas";
 import Entrar from "./paginas/Entrar";
+import Gasto from "./paginas/Gasto";
 import Marco from "./componentes/Marco";
 import Inicio from "./paginas/Inicio";
 import Insumo from "./paginas/Insumo";
 import Insumos from "./paginas/Insumos";
 import Mas from "./paginas/Mas";
 import Modelo from "./paginas/Modelo";
+import NuevaCompra from "./paginas/NuevaCompra";
 import Productos from "./paginas/Productos";
 import Recuperar from "./paginas/Recuperar";
 import Vender from "./paginas/Vender";
@@ -53,6 +60,14 @@ function Protegida() {
             <Route path="ventas/:id" element={<Venta />} />
             <Route path="inventario" element={<Navigate to="/productos" replace />} />
             <Route path="mas" element={<Mas />} />
+            <Route path="clientes" element={<Clientes />} />
+            <Route path="clientes/:id" element={<Clientes />} />
+            <Route path="cuentas" element={<Cuentas />} />
+            <Route path="cuentas/categorias" element={<Categorias />} />
+            <Route path="cuentas/gasto" element={<Gasto />} />
+            <Route path="compras" element={<Compras />} />
+            <Route path="compras/nueva" element={<NuevaCompra />} />
+            <Route path="compras/:id" element={<Compra />} />
             <Route path="productos" element={<Productos />} />
             <Route path="productos/:id" element={<Modelo />} />
             <Route path="insumos" element={<Insumos />} />

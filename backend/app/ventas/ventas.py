@@ -1,6 +1,6 @@
 """Venta rápida: un pedido inmediato que descuenta la vitrina y suma el ingreso a una cuenta."""
 
-from datetime import date, datetime, time
+from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
 from app.db import SesionDB
-from app.hora import BOGOTA, a_utc, hoy_bogota, limites_del_dia
+from app.hora import fecha_de_registro, hoy_bogota, limites_del_dia
 from app.inventario.existencias import ErrorInventario, existencias, registrar_movimiento
 from app.inventario.modelos import Modelo, Variante
 from app.inventario.productos import sin_tildes
@@ -81,21 +81,18 @@ def venta_salida(sesion: Session, pedido: Pedido) -> VentaSalida:
     )
 
 
-def _fecha(dia) -> datetime:
-    hoy = hoy_bogota()
-    if dia is not None and dia > hoy:
-        raise ErrorInventario("La fecha no puede ser futura.")
-    if dia is None or dia == hoy:
-        return ahora_utc()
-    # Venta anotada en una feria y registrada después: se ubica al mediodía de ese día.
-    return a_utc(datetime.combine(dia, time(12), BOGOTA))
-
-
 def registrar_venta(sesion: Session, datos: VentaEntrada) -> Pedido:
     cuenta = sesion.get(Cuenta, datos.cuenta_id)
     if cuenta is None or not cuenta.activa:
         raise ErrorInventario(ELIGE_CUENTA)
-    fecha = _fecha(datos.fecha)
+    if datos.cliente_id is None:
+        cliente_id = sesion.scalar(select(Cliente.id).where(Cliente.es_mostrador).limit(1))
+    else:
+        cliente = sesion.get(Cliente, datos.cliente_id)
+        if cliente is None or not cliente.activo:
+            raise ErrorInventario("Elige una clienta de la lista.")
+        cliente_id = cliente.id
+    fecha = fecha_de_registro(datos.fecha)
     cantidades: dict[int, int] = {}
     for i in datos.items:
         cantidades[i.variante_id] = cantidades.get(i.variante_id, 0) + i.cantidad
@@ -112,13 +109,12 @@ def registrar_venta(sesion: Session, datos: VentaEntrada) -> Pedido:
     if datos.descuento > subtotal:
         raise ErrorInventario("El descuento no puede ser mayor que el subtotal.")
 
-    mostrador = sesion.scalar(select(Cliente.id).where(Cliente.es_mostrador).limit(1))
     pedido = Pedido(
         fecha=fecha,
         canal=datos.canal,
         tipo="inmediata",
         estado="entregado",
-        cliente_id=mostrador,
+        cliente_id=cliente_id,
         descuento=datos.descuento,
         total=subtotal - datos.descuento,
         nota=datos.nota,

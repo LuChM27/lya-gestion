@@ -78,3 +78,9 @@ export function fechaLarga(iso: string): string {
   const dia = partes.weekday ?? "";
   return `${dia.charAt(0).toUpperCase()}${dia.slice(1)}, ${partes.day} de ${partes.month}`;
 }
+
+/** WhatsApp guardado con indicativo: 57 + 10 dígitos se ve «300 456 7812»; otro país, «+<dígitos>». */
+export function telefono(digitos: string): string {
+  if (/^57\d{10}$/.test(digitos)) return `${digitos.slice(2, 5)} ${digitos.slice(5, 8)} ${digitos.slice(8)}`;
+  return `+${digitos}`;
+}
