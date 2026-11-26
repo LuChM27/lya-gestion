@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { borrar, enviar, ErrorApi, pedir } from "../api";
 import type { ClienteFicha, ClienteResumen } from "../clientes";
@@ -21,6 +21,7 @@ export default function Clientes() {
   const [modo, setModo] = useState<"ver" | "crear" | "editar">("ver");
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
+  const recuperando = useRef(false);
   const recargar = () => setVersion((v) => v + 1);
 
   useEffect(() => {
@@ -72,12 +73,16 @@ export default function Clientes() {
   }
 
   async function recuperar() {
-    if (!ficha) return;
+    // Un doble toque no repite la petición.
+    if (!ficha || recuperando.current) return;
+    recuperando.current = true;
     try {
       setFicha(await enviar<ClienteFicha>(`/api/clientes/${ficha.id}/restaurar`, {}));
       recargar();
     } catch (err) {
       setError(err instanceof ErrorApi ? err.mensaje : String(err));
+    } finally {
+      recuperando.current = false;
     }
   }
 

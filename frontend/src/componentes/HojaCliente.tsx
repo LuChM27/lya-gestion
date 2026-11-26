@@ -51,7 +51,7 @@ export default function HojaCliente({
     pedir<ClienteResumen[]>("/api/clientes")
       .then(setLista)
       .catch((err) => setError(err instanceof ErrorApi ? err.mensaje : String(err)));
-    hoja.current?.querySelector<HTMLElement>("input, button")?.focus();
+    hoja.current?.querySelector<HTMLElement>("input")?.focus();
   }, []);
 
   // Foco atrapado dentro de la hoja y Escape para cerrar.
@@ -74,9 +74,15 @@ export default function HojaCliente({
   }
 
   const texto = sinTildes(buscar.trim());
-  const digitos = buscar.replace(/\D/g, "");
+  // Igual que la búsqueda del servidor: por número solo sin letras y con 3 cifras o más.
+  const soloDigitos = buscar.replace(/\D/g, "");
+  const digitos = /\p{L}/u.test(buscar) || soloDigitos.length < 3 ? "" : soloDigitos;
   const visibles = lista.filter(
-    (c) => !texto || sinTildes(c.nombre).includes(texto) || (digitos !== "" && c.whatsapp.includes(digitos)),
+    (c) =>
+      !texto ||
+      sinTildes(c.nombre).includes(texto) ||
+      sinTildes(c.instagram ?? "").includes(texto) ||
+      (digitos !== "" && c.whatsapp.includes(digitos)),
   );
 
   return (

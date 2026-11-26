@@ -29,7 +29,7 @@ const CUENTAS = [
   { id: 3, nombre: "Daviplata" },
 ];
 const VENTA = { id: 12, numero: "0012" };
-const VALENTINA = { id: 5, nombre: "Valentina Ríos", whatsapp: "573004567812", instagram: null, total_comprado: 0, activo: true };
+const VALENTINA = { id: 5, nombre: "Valentina Ríos", whatsapp: "573004567812", instagram: "@valen.tejidos", total_comprado: 0, activo: true };
 
 function api(extra = {}) {
   return simularApi({
@@ -318,4 +318,23 @@ test("error de clienta archivada", async () => {
   await userEvent.click(screen.getByRole("button", { name: /^Guardar venta/ }));
   const franja = within(screen.getByRole("region", { name: "Total" }));
   expect(await franja.findByText("Elige una clienta de la lista.")).toBeInTheDocument();
+});
+
+test("la hoja busca por Instagram y por número sin traer de más", async () => {
+  const ana = { ...VALENTINA, id: 6, nombre: "Ana Pérez", whatsapp: "573152209087", instagram: null };
+  api({ "GET /api/clientes": { cuerpo: [VALENTINA, ana] } });
+  montar();
+  await producto("Rosa palo");
+  await userEvent.click(screen.getByRole("button", { name: /Cliente de mostrador/ }));
+  const hoja = within(screen.getByRole("dialog"));
+  const buscar = hoja.getByRole("searchbox");
+  expect(buscar).toHaveFocus();
+  await hoja.findByRole("button", { name: /Ana Pérez/ });
+  const nombres = () => hoja.queryAllByRole("button", { name: /Valentina|Ana/ }).map((b) => b.textContent);
+  fireEvent.change(buscar, { target: { value: "@valen" } });
+  expect(nombres()).toEqual([expect.stringContaining("Valentina Ríos")]);
+  fireEvent.change(buscar, { target: { value: "57" } });
+  expect(nombres()).toEqual([]);
+  fireEvent.change(buscar, { target: { value: "315 220" } });
+  expect(nombres()).toEqual([expect.stringContaining("Ana Pérez")]);
 });

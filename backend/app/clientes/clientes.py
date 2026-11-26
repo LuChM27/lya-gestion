@@ -4,6 +4,7 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
@@ -47,7 +48,7 @@ def _revisar_repetido(sesion: Session, whatsapp: str, propio: int | None) -> Non
         raise HTTPException(409, f"Ya tienes a {otra.nombre} con ese WhatsApp.")
     raise HTTPException(
         409,
-        f"{otra.nombre} tiene ese WhatsApp y está archivada: recupérala en «Ver archivadas».",
+        f"{otra.nombre} tiene ese WhatsApp y está archivada: recupérala en Clientes.",
     )
 
 
@@ -124,6 +125,14 @@ def ficha(sesion: Session, cliente: Cliente) -> ClienteFicha:
     )
 
 
+def _confirmar(sesion: Session) -> None:
+    try:
+        sesion.commit()
+    except IntegrityError:
+        sesion.rollback()
+        raise HTTPException(409, "Ya tienes una clienta con ese WhatsApp.") from None
+
+
 def _guardar(sesion: Session, cliente: Cliente, datos: ClienteEntrada) -> None:
     whatsapp = normalizar_whatsapp(datos.whatsapp)
     _revisar_repetido(sesion, whatsapp, cliente.id)
@@ -138,7 +147,10 @@ def listar(sesion: SesionDB, buscar: str = "", archivados: bool = False) -> list
         select(Cliente).where(~Cliente.es_mostrador, Cliente.activo.is_(not archivados))
     ).all()
     texto = sin_tildes(buscar.strip())
+    # Por número solo si no hay letras y son 3 cifras o más: «57» o «Ana 2» no traen a todas.
     digitos = re.sub(r"\D", "", buscar)
+    if re.search(r"[^\W\d_]", buscar) or len(digitos) < 3:
+        digitos = ""
 
     def coincide(c: Cliente) -> bool:
         if not texto:
@@ -163,7 +175,7 @@ def crear(datos: ClienteEntrada, sesion: SesionDB) -> ClienteFicha:
     cliente = Cliente(es_mostrador=False, activo=True)
     _guardar(sesion, cliente, datos)
     sesion.add(cliente)
-    sesion.commit()
+    _confirmar(sesion)
     return ficha(sesion, cliente)
 
 
@@ -176,7 +188,7 @@ def ver(cliente_id: int, sesion: SesionDB) -> ClienteFicha:
 def editar(cliente_id: int, datos: ClienteEntrada, sesion: SesionDB) -> ClienteFicha:
     cliente = _cliente(sesion, cliente_id)
     _guardar(sesion, cliente, datos)
-    sesion.commit()
+    _confirmar(sesion)
     return ficha(sesion, cliente)
 
 
@@ -191,5 +203,5 @@ def restaurar(cliente_id: int, sesion: SesionDB) -> ClienteFicha:
     cliente = _cliente(sesion, cliente_id)
     _revisar_repetido(sesion, cliente.whatsapp or "", cliente.id)
     cliente.activo = True
-    sesion.commit()
+    _confirmar(sesion)
     return ficha(sesion, cliente)

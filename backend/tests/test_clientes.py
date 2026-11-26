@@ -61,7 +61,7 @@ def test_whatsapp_de_archivada(autenticado):
     r = crear_cliente(autenticado, nombre="Otra")
     assert r.status_code == 409
     assert r.json()["detail"] == (
-        "Valentina Ríos tiene ese WhatsApp y está archivada: recupérala en «Ver archivadas»."
+        "Valentina Ríos tiene ese WhatsApp y está archivada: recupérala en Clientes."
     )
 
 
@@ -215,3 +215,40 @@ def test_ficha_sin_compras(autenticado):
     assert f["promedio"] == 0
     assert f["canal_frecuente"] is None
     assert f["ultima_compra"] is None
+
+
+def test_buscar_numero_no_encuentra_de_mas(autenticado):
+    crear_cliente(autenticado)
+    crear_cliente(autenticado, nombre="Ana Pérez", whatsapp="315 220 9087")
+
+    def nombres(buscar):
+        return [
+            c["nombre"] for c in autenticado.get("/api/clientes", params={"buscar": buscar}).json()
+        ]
+
+    assert nombres("57") == []
+    assert nombres("+57") == []
+    assert nombres("Ana 2") == []
+    assert nombres("300 456") == ["Valentina Ríos"]
+    assert nombres("+57 315") == ["Ana Pérez"]
+
+
+def test_aviso_de_archivada_sirve_desde_la_venta(autenticado):
+    v = crear_cliente(autenticado).json()
+    autenticado.delete(f"/api/clientes/{v['id']}")
+    r = crear_cliente(autenticado, nombre="Otra")
+    assert (
+        r.json()["detail"]
+        == "Valentina Ríos tiene ese WhatsApp y está archivada: recupérala en Clientes."
+    )
+
+
+def test_whatsapp_unico_en_la_base(autenticado, monkeypatch):
+    from app.clientes import clientes
+
+    crear_cliente(autenticado)
+    # Dos equipos guardando a la vez: la revisión de la app no alcanza a ver a la otra.
+    monkeypatch.setattr(clientes, "_revisar_repetido", lambda *a: None)
+    r = crear_cliente(autenticado, nombre="Otra")
+    assert r.status_code == 409
+    assert r.json()["detail"] == "Ya tienes una clienta con ese WhatsApp."

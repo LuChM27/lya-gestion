@@ -163,3 +163,18 @@ test("en el celular el historial junta fecha y estado bajo el número", async ()
     expect(screen.getByRole("columnheader", { name: columna })).toHaveClass("hidden");
   }
 });
+
+test("recuperar con doble toque manda una sola petición", async () => {
+  const archivada = { ...FICHA, activo: false };
+  const llamadas = simularApi({
+    "GET /api/clientes": { cuerpo: [] },
+    "GET /api/clientes/5": { cuerpo: archivada },
+    "POST /api/clientes/5/restaurar": { cuerpo: FICHA, demoraMs: 50 },
+  });
+  montar("/clientes/5");
+  const boton = await screen.findByRole("button", { name: "Recuperar clienta" });
+  fireEvent.click(boton);
+  fireEvent.click(boton);
+  expect(await screen.findByRole("button", { name: "Archivar clienta" })).toBeInTheDocument();
+  expect(llamadas.filter((l) => l.clave === "POST /api/clientes/5/restaurar")).toHaveLength(1);
+});
