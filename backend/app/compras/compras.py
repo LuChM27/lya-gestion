@@ -56,26 +56,20 @@ def _egreso(sesion: Session, compra: Compra, cuenta: Cuenta, fecha) -> Transacci
     return t
 
 
-def salida(sesion: Session, compra: Compra) -> CompraSalida:
+def _salidas(sesion: Session, compras: list[Compra]) -> list[CompraSalida]:
+    """Arma varias compras con tres consultas en total, no tres por compra."""
+    ids = [c.id for c in compras]
+    if not ids:
+        return []
+    items: dict[int, list[ItemCompraSalida]] = {i: [] for i in ids}
     filas = sesion.execute(
         select(MovimientoInventario, Insumo)
         .join(Insumo, MovimientoInventario.insumo_id == Insumo.id)
-        .where(MovimientoInventario.compra_id == compra.id, MovimientoInventario.tipo == "compra")
+        .where(MovimientoInventario.compra_id.in_(ids), MovimientoInventario.tipo == "compra")
         .order_by(MovimientoInventario.id)
     ).all()
-    cuenta = sesion.get(Cuenta, compra.cuenta_id) if compra.cuenta_id else None
-    pago = sesion.scalar(select(Transaccion.fecha).where(Transaccion.compra_id == compra.id))
-    return CompraSalida(
-        id=compra.id,
-        numero=numero(compra.id),
-        fecha=compra.fecha,
-        proveedor=compra.proveedor,
-        total=compra.total,
-        estado=compra.estado,
-        nota=compra.nota,
-        cuenta=CuentaSalida(id=cuenta.id, nombre=cuenta.nombre) if cuenta else None,
-        pagada_el=pago,
-        items=[
+    for m, i in filas:
+        items[m.compra_id].append(
             ItemCompraSalida(
                 insumo_id=i.id,
                 insumo=i.nombre,
@@ -84,9 +78,40 @@ def salida(sesion: Session, compra: Compra) -> CompraSalida:
                 precio_unitario=m.costo_unitario,
                 subtotal=int((m.cantidad * m.costo_unitario).quantize(Decimal(1))),
             )
-            for m, i in filas
-        ],
+        )
+    cuenta_ids = {c.cuenta_id for c in compras if c.cuenta_id}
+    cuentas = (
+        {c.id: c for c in sesion.scalars(select(Cuenta).where(Cuenta.id.in_(cuenta_ids)))}
+        if cuenta_ids
+        else {}
     )
+    pagos = dict(
+        sesion.execute(
+            select(Transaccion.compra_id, Transaccion.fecha).where(Transaccion.compra_id.in_(ids))
+        ).all()
+    )
+    salidas = []
+    for compra in compras:
+        cuenta = cuentas.get(compra.cuenta_id) if compra.cuenta_id else None
+        salidas.append(
+            CompraSalida(
+                id=compra.id,
+                numero=numero(compra.id),
+                fecha=compra.fecha,
+                proveedor=compra.proveedor,
+                total=compra.total,
+                estado=compra.estado,
+                nota=compra.nota,
+                cuenta=CuentaSalida(id=cuenta.id, nombre=cuenta.nombre) if cuenta else None,
+                pagada_el=pagos.get(compra.id),
+                items=items[compra.id],
+            )
+        )
+    return salidas
+
+
+def salida(sesion: Session, compra: Compra) -> CompraSalida:
+    return _salidas(sesion, [compra])[0]
 
 
 def _compra(sesion: Session, compra_id: int) -> Compra:
@@ -149,8 +174,8 @@ def listar(sesion: SesionDB, sin_pagar: bool = False) -> list[CompraSalida]:
     consulta = select(Compra)
     if sin_pagar:
         consulta = consulta.where(Compra.cuenta_id.is_(None), Compra.estado == "activa")
-    compras = sesion.scalars(consulta.order_by(Compra.fecha.desc(), Compra.id.desc()))
-    return [salida(sesion, c) for c in compras]
+    compras = sesion.scalars(consulta.order_by(Compra.fecha.desc(), Compra.id.desc())).all()
+    return _salidas(sesion, list(compras))
 
 
 @router.get("/proveedores")
