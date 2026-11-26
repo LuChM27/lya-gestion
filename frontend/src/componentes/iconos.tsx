@@ -118,3 +118,11 @@ export const IconoEditar = icono(
   </>,
 );
 export const IconoCerrar = icono(<path d="M6 6l12 12M18 6 6 18" />, 2);
+// Mis cuentas y Transferir: docs/mockups/fuentes/cuentas-mac.html.
+export const IconoCuentas = icono(
+  <>
+    <rect x="3" y="6" width="18" height="14" rx="3" />
+    <path d="M3 10h18M16 15h2" />
+  </>,
+);
+export const IconoTransferir = icono(<path d="M7 7h13l-4-4M17 17H4l4 4" />);

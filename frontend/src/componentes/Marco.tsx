@@ -2,10 +2,10 @@ import { useState, type ComponentType } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useSalir } from "../sesion";
 import AccesoCelular from "./AccesoCelular";
-import { IconoClientes, IconoInicio, IconoInventario, IconoMas, IconoQr, IconoSalir, IconoSumar, IconoVentas } from "./iconos";
+import { IconoClientes, IconoCuentas, IconoInicio, IconoInventario, IconoMas, IconoQr, IconoSalir, IconoSumar, IconoVentas } from "./iconos";
 
 // Menú lateral de docs/mockups/fuentes/inicio-mac.html; encabezado y barra de inicio-celular.html.
-// Solo se muestran las secciones que ya existen; Pedidos, Mis cuentas y demás llegan con su módulo.
+// Solo se muestran las secciones que ya existen; Pedidos, Estadísticas y demás llegan con su módulo.
 type Seccion = { a: string; texto: string; icono: ComponentType<{ tamano?: number; trazo?: number }>; activa: (ruta: string) => boolean };
 
 const INICIO: Seccion = { a: "/", texto: "Inicio", icono: IconoInicio, activa: (r) => r === "/" };
@@ -17,7 +17,8 @@ const INVENTARIO: Seccion = {
   activa: (r) => ["/inventario", "/productos", "/insumos"].some((p) => r.startsWith(p)),
 };
 const CLIENTES: Seccion = { a: "/clientes", texto: "Clientes", icono: IconoClientes, activa: (r) => r.startsWith("/clientes") };
-const MAS: Seccion = { a: "/mas", texto: "Más", icono: IconoMas, activa: (r) => ["/mas", "/clientes"].some((p) => r.startsWith(p)) };
+const CUENTAS: Seccion = { a: "/cuentas", texto: "Mis cuentas", icono: IconoCuentas, activa: (r) => ["/cuentas", "/compras"].some((p) => r.startsWith(p)) };
+const MAS: Seccion = { a: "/mas", texto: "Más", icono: IconoMas, activa: (r) => ["/mas", "/clientes", "/cuentas", "/compras"].some((p) => r.startsWith(p)) };
 
 function MenuLateral({ ruta }: { ruta: string }) {
   const salir = useSalir();
@@ -30,7 +31,7 @@ function MenuLateral({ ruta }: { ruta: string }) {
           <img src="/logo.webp" alt="L&A Tejidos" width={148} height={148} className="block h-[148px] w-[148px] rounded-full border-4 border-white shadow-logo" />
         </div>
         <nav aria-label="Menú" className="flex flex-col gap-1">
-          {[INICIO, VENTAS, INVENTARIO, CLIENTES].map((s) => {
+          {[INICIO, VENTAS, INVENTARIO, CLIENTES, CUENTAS].map((s) => {
             const activa = s.activa(ruta);
             return (
               <Link
@@ -120,8 +121,8 @@ function BarraInferior({ ruta }: { ruta: string }) {
 
 export default function Marco() {
   const { pathname } = useLocation();
-  // La venta rápida va a pantalla completa en el celular, con su propio botón de volver.
-  const pantallaCompleta = pathname === "/vender";
+  // La venta rápida y Registrar gasto van a pantalla completa en el celular, con su propio botón de volver.
+  const pantallaCompleta = pathname === "/vender" || pathname === "/cuentas/gasto";
 
   return (
     <div className="min-h-dvh bg-fondo">

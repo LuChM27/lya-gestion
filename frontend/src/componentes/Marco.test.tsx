@@ -35,7 +35,7 @@ test("barra inferior: cuatro secciones y el + de nueva venta", () => {
 test("menú lateral con logo y secciones que existen", () => {
   montar("/");
   const menu = within(screen.getByRole("navigation", { name: "Menú" }));
-  expect(menu.getAllByRole("link").map((a) => a.textContent)).toEqual(["Inicio", "Ventas", "Inventario", "Clientes"]);
+  expect(menu.getAllByRole("link").map((a) => a.textContent)).toEqual(["Inicio", "Ventas", "Inventario", "Clientes", "Mis cuentas"]);
   expect(screen.getAllByRole("img", { name: "L&A Tejidos" }).length).toBeGreaterThan(0);
 });
 
@@ -76,4 +76,10 @@ test("Más lleva a Clientes", () => {
   montar("/mas");
   const pagina = within(screen.getByRole("main"));
   expect(pagina.getByRole("link", { name: /Clientes/ })).toHaveAttribute("href", "/clientes");
+});
+
+test("Más lleva a Mis cuentas", () => {
+  montar("/mas");
+  const pagina = within(screen.getByRole("main"));
+  expect(pagina.getByRole("link", { name: /Mis cuentas/ })).toHaveAttribute("href", "/cuentas");
 });

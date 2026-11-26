@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AccesoCelular from "../componentes/AccesoCelular";
-import { IconoClientes, IconoQr, IconoSalir, IconoSiguiente } from "../componentes/iconos";
+import { IconoClientes, IconoCuentas, IconoQr, IconoSalir, IconoSiguiente } from "../componentes/iconos";
 import { Titulo } from "../componentes/ui";
 import { useSalir } from "../sesion";
 
@@ -26,6 +26,16 @@ export default function Mas() {
           <span className="flex min-w-0 flex-1 flex-col gap-px">
             <span className="text-sm font-extrabold">Clientes</span>
             <span className="text-xs text-suave">Contactos e historial</span>
+          </span>
+          <IconoSiguiente tamano={16} className="shrink-0 text-flecha" />
+        </Link>
+        <Link to="/cuentas" className={`${FILA} no-underline`}>
+          <span className={CUADRO}>
+            <IconoCuentas />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-px">
+            <span className="text-sm font-extrabold">Mis cuentas</span>
+            <span className="text-xs text-suave">Saldos, gastos y compras</span>
           </span>
           <IconoSiguiente tamano={16} className="shrink-0 text-flecha" />
         </Link>
