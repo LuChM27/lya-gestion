@@ -184,3 +184,86 @@ def test_gasto_de_la_noche_cuenta_en_su_mes(autenticado, config_tmp):
     motor.dispose()
     assert [m["descripcion"] for m in lista(autenticado, mes="2026-10")] == ["Taxi"]
     assert lista(autenticado, mes="2026-11") == []
+
+
+def crear_fijo(c, **datos):
+    cuerpo = {
+        "nombre": "Internet",
+        "monto": 85000,
+        "categoria_id": categoria(c, "Servicios"),
+        "cuenta_id": NEQUI,
+    }
+    return c.post("/api/gastos-fijos", json=cuerpo | datos)
+
+
+def test_gasto_fijo_pendiente_y_registrado(autenticado):
+    f = crear_fijo(autenticado).json()
+    assert f["registrado_este_mes"] is False
+    assert f["categoria"] == "Servicios"
+    assert f["cuenta"] == "Nequi"
+    assert saldo_de(autenticado, NEQUI) == 0
+    gasto(autenticado, monto=87000, cat="Servicios", cuenta=NEQUI, gasto_fijo_id=f["id"])
+    [f] = autenticado.get("/api/gastos-fijos").json()
+    assert f["registrado_este_mes"] is True
+    assert lista(autenticado)[0]["descripcion"] == "Internet"
+
+
+def test_gasto_fijo_registrado_el_mes_pasado_vuelve_a_faltar(autenticado):
+    f = crear_fijo(autenticado).json()
+    mes_pasado = (hoy_bogota().replace(day=1) - timedelta(days=1)).isoformat()
+    gasto(autenticado, cat="Servicios", gasto_fijo_id=f["id"], fecha=mes_pasado)
+    [f] = autenticado.get("/api/gastos-fijos").json()
+    assert f["registrado_este_mes"] is False
+
+
+def test_editar_y_archivar_gasto_fijo(autenticado):
+    f = crear_fijo(autenticado).json()
+    r = autenticado.put(
+        f"/api/gastos-fijos/{f['id']}",
+        json={
+            "nombre": "Internet hogar",
+            "monto": 90000,
+            "categoria_id": categoria(autenticado, "Servicios"),
+        },
+    )
+    assert r.json()["nombre"] == "Internet hogar"
+    assert r.json()["cuenta"] is None
+    assert autenticado.delete(f"/api/gastos-fijos/{f['id']}").status_code == 204
+    assert autenticado.get("/api/gastos-fijos").json() == []
+
+
+def test_resumen_del_mes(autenticado, vitrina):  # noqa: F811
+    vender(autenticado, [item(vitrina["rosa"])])
+    iniciar_efectivo(autenticado)
+    mover(
+        autenticado,
+        tipo="ingreso",
+        monto=50000,
+        cuenta_id=EFECTIVO,
+        categoria_id=categoria(autenticado, "Otros ingresos"),
+    )
+    gasto(autenticado, monto=150000)
+    gasto(autenticado, monto=80000, cat="Publicidad")
+    mover(autenticado, tipo="retiro", monto=40000, cuenta_id=EFECTIVO)
+    mover(
+        autenticado, tipo="transferencia", monto=100000, cuenta_id=EFECTIVO, cuenta_destino_id=NEQUI
+    )
+    r = autenticado.get("/api/cuentas/resumen").json()
+    assert r["mes"] == hoy_bogota().strftime("%Y-%m")
+    assert (r["entro"], r["salio"], r["ganancia"], r["retiros"]) == (175000, 230000, -55000, 40000)
+    assert r["por_categoria"] == [
+        {"categoria": "Stand de feria", "monto": 150000},
+        {"categoria": "Publicidad", "monto": 80000},
+    ]
+    cierre = {s["cuenta"]: s["saldo"] for s in r["saldos_al_cierre"]}
+    assert cierre == {"Efectivo": -20000, "Nequi": 225000, "Daviplata": 0}
+
+
+def test_saldos_al_cierre_de_un_mes_anterior(autenticado):
+    iniciar_efectivo(autenticado)
+    hoy = hoy_bogota()
+    mes_pasado = (hoy.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+    gasto(autenticado, monto=1000)
+    r = autenticado.get("/api/cuentas/resumen", params={"mes": mes_pasado}).json()
+    assert {s["cuenta"]: s["saldo"] for s in r["saldos_al_cierre"]}["Efectivo"] == 300000
+    assert r["salio"] == 0

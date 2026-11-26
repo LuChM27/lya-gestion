@@ -8,13 +8,19 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencias import usuario_actual
 from app.cuentas.esquemas import (
+    GastoFijoEntrada,
+    GastoFijoSalida,
+    MontoCategoria,
     MovimientoEntrada,
     MovimientoSalida,
     Origen,
+    ResumenMes,
+    SaldoCuenta,
 )
-from app.cuentas.saldos import mes_utc
+from app.cuentas.saldos import mes_utc, saldos
 from app.db import SesionDB
 from app.hora import fecha_de_registro, hoy_bogota
+from app.inventario.productos import sin_tildes
 from app.ventas.modelos import Categoria, Cuenta, GastoFijo, Pago, Transaccion
 
 router = APIRouter(prefix="/api", dependencies=[Depends(usuario_actual)])
@@ -164,3 +170,124 @@ def editar_movimiento(
 def borrar_movimiento(movimiento_id: int, sesion: SesionDB) -> None:
     sesion.delete(_manual(sesion, movimiento_id))
     sesion.commit()
+
+
+def _registrados(sesion: Session, mes: str) -> set[int]:
+    inicio, fin = mes_utc(mes)
+    return set(
+        sesion.scalars(
+            select(Transaccion.gasto_fijo_id).where(
+                Transaccion.gasto_fijo_id.is_not(None),
+                Transaccion.fecha >= inicio,
+                Transaccion.fecha < fin,
+            )
+        )
+    )
+
+
+def _fijo_salida(sesion: Session, f: GastoFijo, registrados: set[int]) -> GastoFijoSalida:
+    cuenta = sesion.get(Cuenta, f.cuenta_id) if f.cuenta_id else None
+    return GastoFijoSalida(
+        id=f.id,
+        nombre=f.nombre,
+        monto=f.monto,
+        categoria_id=f.categoria_id,
+        categoria=sesion.get(Categoria, f.categoria_id).nombre,
+        cuenta_id=f.cuenta_id,
+        cuenta=cuenta.nombre if cuenta else None,
+        activo=f.activo,
+        registrado_este_mes=f.id in registrados,
+    )
+
+
+def _llenar_fijo(sesion: Session, f: GastoFijo, datos: GastoFijoEntrada) -> None:
+    categoria = sesion.get(Categoria, datos.categoria_id)
+    if categoria is None or not categoria.activa or categoria.tipo != "gasto":
+        raise HTTPException(422, "Elige una categoría.")
+    if datos.cuenta_id is not None:
+        _cuenta_activa(sesion, datos.cuenta_id)
+    f.nombre, f.monto, f.categoria_id, f.cuenta_id = (
+        datos.nombre,
+        datos.monto,
+        datos.categoria_id,
+        datos.cuenta_id,
+    )
+
+
+def _fijo(sesion: Session, fijo_id: int) -> GastoFijo:
+    f = sesion.get(GastoFijo, fijo_id)
+    if f is None:
+        raise HTTPException(404, "Ese gasto fijo no existe.")
+    return f
+
+
+@router.get("/gastos-fijos")
+def listar_fijos(sesion: SesionDB) -> list[GastoFijoSalida]:
+    registrados = _registrados(sesion, hoy_bogota().strftime("%Y-%m"))
+    fijos = sorted(
+        sesion.scalars(select(GastoFijo).where(GastoFijo.activo)),
+        key=lambda f: sin_tildes(f.nombre),
+    )
+    return [_fijo_salida(sesion, f, registrados) for f in fijos]
+
+
+@router.post("/gastos-fijos", status_code=201)
+def crear_fijo(datos: GastoFijoEntrada, sesion: SesionDB) -> GastoFijoSalida:
+    f = GastoFijo(activo=True)
+    _llenar_fijo(sesion, f, datos)
+    sesion.add(f)
+    sesion.commit()
+    return _fijo_salida(sesion, f, _registrados(sesion, hoy_bogota().strftime("%Y-%m")))
+
+
+@router.put("/gastos-fijos/{fijo_id}")
+def editar_fijo(fijo_id: int, datos: GastoFijoEntrada, sesion: SesionDB) -> GastoFijoSalida:
+    f = _fijo(sesion, fijo_id)
+    _llenar_fijo(sesion, f, datos)
+    sesion.commit()
+    return _fijo_salida(sesion, f, _registrados(sesion, hoy_bogota().strftime("%Y-%m")))
+
+
+@router.delete("/gastos-fijos/{fijo_id}", status_code=204)
+def archivar_fijo(fijo_id: int, sesion: SesionDB) -> None:
+    _fijo(sesion, fijo_id).activo = False
+    sesion.commit()
+
+
+@router.get("/cuentas/resumen")
+def resumen(sesion: SesionDB, mes: str = "") -> ResumenMes:
+    mes = mes or hoy_bogota().strftime("%Y-%m")
+    inicio, fin = mes_utc(mes)
+    filas = sesion.execute(
+        select(Transaccion, Categoria)
+        .outerjoin(Categoria, Transaccion.categoria_id == Categoria.id)
+        .where(Transaccion.fecha >= inicio, Transaccion.fecha < fin)
+    ).all()
+    entro = sum(t.monto for t, _ in filas if t.tipo == "ingreso")
+    retiros = sum(
+        t.monto for t, c in filas if t.tipo == "egreso" and c is not None and c.tipo == "retiro"
+    )
+    por_categoria: dict[str, int] = {}
+    for t, c in filas:
+        if t.tipo == "egreso" and (c is None or c.tipo != "retiro"):
+            nombre = c.nombre if c else "Otros gastos"
+            por_categoria[nombre] = por_categoria.get(nombre, 0) + t.monto
+    salio = sum(por_categoria.values())
+    al_cierre = saldos(sesion, fin)
+    cuentas = sesion.scalars(select(Cuenta).order_by(Cuenta.id))
+    return ResumenMes(
+        mes=mes,
+        entro=entro,
+        salio=salio,
+        ganancia=entro - salio,
+        retiros=retiros,
+        por_categoria=[
+            MontoCategoria(categoria=n, monto=m)
+            for n, m in sorted(por_categoria.items(), key=lambda x: -x[1])
+        ],
+        saldos_al_cierre=[
+            SaldoCuenta(cuenta=c.nombre, saldo=al_cierre[c.id])
+            for c in cuentas
+            if c.activa or al_cierre[c.id] != 0
+        ],
+    )
