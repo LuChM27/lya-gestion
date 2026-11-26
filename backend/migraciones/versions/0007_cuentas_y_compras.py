@@ -100,10 +100,10 @@ def downgrade() -> None:
             tabla.drop_column(columna)
     op.drop_table("compra")
     op.drop_table("gasto_fijo")
+    sembradas = ", ".join(f"'{n}'" for n, _ in CATEGORIAS)
     op.execute(
-        "DELETE FROM categoria WHERE nombre IN ("
-        + ", ".join(f"'{n}'" for n, _ in CATEGORIAS if n != "Insumos")
-        + ", 'Insumos') AND id NOT IN (SELECT categoria_id FROM transaccion WHERE categoria_id IS NOT NULL)"
+        f"DELETE FROM categoria WHERE nombre IN ({sembradas}) AND id NOT IN "
+        "(SELECT categoria_id FROM transaccion WHERE categoria_id IS NOT NULL)"
     )
     with op.batch_alter_table("categoria") as tabla:
         tabla.drop_column("activa")

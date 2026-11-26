@@ -267,3 +267,80 @@ def test_saldos_al_cierre_de_un_mes_anterior(autenticado):
     r = autenticado.get("/api/cuentas/resumen", params={"mes": mes_pasado}).json()
     assert {s["cuenta"]: s["saldo"] for s in r["saldos_al_cierre"]}["Efectivo"] == 300000
     assert r["salio"] == 0
+
+
+def test_editar_gasto_fijo_conserva_el_enlace(autenticado):
+    f = crear_fijo(autenticado).json()
+    m = gasto(autenticado, monto=85000, cat="Servicios", cuenta=NEQUI, gasto_fijo_id=f["id"]).json()
+    assert m["gasto_fijo_id"] == f["id"]
+    cuerpo = {
+        "tipo": "gasto",
+        "monto": 90000,
+        "cuenta_id": NEQUI,
+        "categoria_id": m["categoria_id"],
+        "gasto_fijo_id": m["gasto_fijo_id"],
+    }
+    assert autenticado.put(f"/api/movimientos/{m['id']}", json=cuerpo).status_code == 200
+    [f] = autenticado.get("/api/gastos-fijos").json()
+    assert f["registrado_este_mes"] is True
+
+
+def test_editar_con_cuenta_y_categoria_archivadas(autenticado):
+    c = autenticado.post("/api/categorias", json={"nombre": "Clases", "tipo": "gasto"}).json()
+    m = gasto(autenticado, monto=1000, cat="Clases", cuenta=DAVIPLATA).json()
+    autenticado.delete(f"/api/cuentas/{DAVIPLATA}")
+    autenticado.delete(f"/api/categorias/{c['id']}")
+    r = autenticado.put(
+        f"/api/movimientos/{m['id']}",
+        json={"tipo": "gasto", "monto": 2000, "cuenta_id": DAVIPLATA, "categoria_id": c["id"]},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["monto"] == 2000
+    # Pasarlo a otra cuenta archivada distinta sí se rechaza.
+    autenticado.delete(f"/api/cuentas/{NEQUI}")
+    r = autenticado.put(
+        f"/api/movimientos/{m['id']}",
+        json={"tipo": "gasto", "monto": 2000, "cuenta_id": NEQUI, "categoria_id": c["id"]},
+    )
+    assert r.json()["detail"] == "Elige una cuenta."
+
+
+def test_transferencia_editada_cambia_su_descripcion(autenticado):
+    iniciar_efectivo(autenticado)
+    m = mover(
+        autenticado, tipo="transferencia", monto=1000, cuenta_id=EFECTIVO, cuenta_destino_id=NEQUI
+    ).json()
+    assert m["nota"] is None
+    r = autenticado.put(
+        f"/api/movimientos/{m['id']}",
+        json={
+            "tipo": "transferencia",
+            "monto": 1000,
+            "cuenta_id": EFECTIVO,
+            "cuenta_destino_id": DAVIPLATA,
+            "nota": m["nota"],
+        },
+    )
+    assert r.json()["descripcion"] == "Pasé a Daviplata"
+    assert (r.json()["cuenta_id"], r.json()["cuenta_destino_id"]) == (EFECTIVO, DAVIPLATA)
+
+
+def test_resumen_de_la_noche_cuenta_en_su_mes(autenticado, config_tmp):
+    motor = crear_motor(config_tmp)
+    with Session(motor) as s:
+        s.add(
+            Transaccion(
+                fecha=datetime(2026, 11, 1, 1),
+                tipo="egreso",
+                monto=5000,
+                descripcion="Taxi",
+                cuenta_id=EFECTIVO,
+                categoria_id=categoria(autenticado, "Transporte"),
+            )
+        )
+        s.commit()
+    motor.dispose()
+    assert (
+        autenticado.get("/api/cuentas/resumen", params={"mes": "2026-10"}).json()["salio"] == 5000
+    )
+    assert autenticado.get("/api/cuentas/resumen", params={"mes": "2026-11"}).json()["salio"] == 0

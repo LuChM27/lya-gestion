@@ -67,7 +67,8 @@ def test_compra_pagada(autenticado, insumos):
 
 
 def test_compra_sin_pagar_y_pago_despues(autenticado, insumos):
-    compra = comprar(autenticado, insumos, cuenta_id=None).json()
+    hace_dos = (hoy_bogota() - timedelta(days=2)).isoformat()
+    compra = comprar(autenticado, insumos, cuenta_id=None, fecha=hace_dos).json()
     assert compra["cuenta"] is None
     assert saldo_de(autenticado, NEQUI) == 0
     sin_pagar = autenticado.get("/api/compras", params={"sin_pagar": True}).json()
@@ -152,3 +153,25 @@ def test_proveedores_sugeridos(autenticado, insumos):
     comprar(autenticado, insumos, proveedor="Murano Express")
     comprar(autenticado, insumos)
     assert autenticado.get("/api/compras/proveedores").json() == ["Hilos La 14", "Murano Express"]
+
+
+def test_anular_con_otra_compra_al_mismo_precio(autenticado, insumos):
+    hilo = insumos["hilo"]
+    solo = [{"insumo_id": hilo, "cantidad": 10, "precio_unitario": 100}]
+    a = comprar(autenticado, insumos, items=solo).json()
+    comprar(autenticado, insumos, items=solo)
+    autenticado.post(f"/api/compras/{a['id']}/anular")
+    assert insumo(autenticado, hilo)["precio_unitario"] == 100
+
+
+def test_pago_no_antes_de_la_compra(autenticado, insumos):
+    hoy = hoy_bogota()
+    compra = comprar(
+        autenticado, insumos, cuenta_id=None, fecha=(hoy - timedelta(days=1)).isoformat()
+    ).json()
+    r = autenticado.post(
+        f"/api/compras/{compra['id']}/pago",
+        json={"cuenta_id": EFECTIVO, "fecha": (hoy - timedelta(days=3)).isoformat()},
+    )
+    assert r.status_code == 422
+    assert r.json()["detail"] == "El pago no puede ser de antes de la compra."

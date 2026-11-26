@@ -64,12 +64,18 @@ def _salida(sesion: Session, t: Transaccion) -> MovimientoSalida:
         signo=signo,
         editable=origen is None,
         origen=origen,
+        nota=t.nota,
+        cuenta_id=t.cuenta_id,
+        cuenta_destino_id=t.cuenta_destino_id,
+        categoria_id=t.categoria_id,
+        gasto_fijo_id=t.gasto_fijo_id,
     )
 
 
-def _cuenta_activa(sesion: Session, cuenta_id: int | None) -> Cuenta:
+def _cuenta_activa(sesion: Session, cuenta_id: int | None, ya_tenia: tuple = ()) -> Cuenta:
+    """Cuenta activa, o la que el movimiento ya tenía aunque luego se haya archivado."""
     cuenta = sesion.get(Cuenta, cuenta_id) if cuenta_id is not None else None
-    if cuenta is None or not cuenta.activa:
+    if cuenta is None or not (cuenta.activa or cuenta.id in ya_tenia):
         raise HTTPException(422, "Elige una cuenta.")
     return cuenta
 
@@ -81,11 +87,13 @@ def _por_nombre(sesion: Session, nombre: str) -> Categoria:
 def _llenar(
     sesion: Session, t: Transaccion, datos: MovimientoEntrada, fecha: datetime | None
 ) -> None:
-    cuenta = _cuenta_activa(sesion, datos.cuenta_id)
+    # Al editar, lo que ya tenía sigue valiendo aunque se haya archivado después.
+    tenia = (t.cuenta_id, t.cuenta_destino_id) if t.id is not None else ()
+    cuenta = _cuenta_activa(sesion, datos.cuenta_id, tenia)
     destino = None
     categoria = None
     if datos.tipo == "transferencia":
-        destino = _cuenta_activa(sesion, datos.cuenta_destino_id)
+        destino = _cuenta_activa(sesion, datos.cuenta_destino_id, tenia)
         if destino.id == cuenta.id:
             raise HTTPException(422, "Elige dos cuentas distintas.")
     elif datos.tipo == "retiro":
@@ -95,7 +103,7 @@ def _llenar(
         esperado = "gasto" if datos.tipo == "gasto" else "ingreso"
         if (
             categoria is None
-            or not categoria.activa
+            or not (categoria.activa or categoria.id == t.categoria_id)
             or categoria.tipo != esperado
             or categoria.nombre == "Ventas"
         ):

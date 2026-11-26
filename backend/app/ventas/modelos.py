@@ -90,7 +90,7 @@ class Transaccion(Base):
     __tablename__ = "transaccion"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
     tipo: Mapped[str] = mapped_column(String(15))
     monto: Mapped[int] = mapped_column(Integer)
     descripcion: Mapped[str] = mapped_column(String(200))

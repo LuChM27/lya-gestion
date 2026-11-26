@@ -174,6 +174,8 @@ def pagar(compra_id: int, datos: PagoCompra, sesion: SesionDB) -> CompraSalida:
     compra = _compra(sesion, compra_id)
     cuenta = _cuenta_activa(sesion, datos.cuenta_id)
     fecha = fecha_de_registro(datos.fecha)
+    if datos.fecha is not None and fecha.date() < compra.fecha.date():
+        raise HTTPException(422, "El pago no puede ser de antes de la compra.")
     # Condicional: si otro equipo (o un doble toque) pagó o anuló primero, no cambia nada.
     cambio = sesion.execute(
         update(Compra)

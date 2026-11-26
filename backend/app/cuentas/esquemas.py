@@ -70,6 +70,11 @@ class MovimientoSalida(BaseModel):
     signo: Literal["+", "-", "="]
     editable: bool
     origen: Origen | None
+    nota: str | None
+    cuenta_id: int
+    cuenta_destino_id: int | None
+    categoria_id: int | None
+    gasto_fijo_id: int | None
 
 
 class GastoFijoEntrada(BaseModel):
